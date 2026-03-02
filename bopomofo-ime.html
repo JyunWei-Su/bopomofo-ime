@@ -5,184 +5,186 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>注音輸入法</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #1c1c1e; --surface: #2c2c2e; --surface2: #3a3a3c;
-  --border: #48484a; --text: #f2f2f7; --text2: #aeaeb2;
-  --accent: #0a84ff; --yellow: #ffd60a; --orange: #ff9f0a;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1c1c1e;--sf:#2c2c2e;--sf2:#3a3a3c;--bd:#48484a;
+  --tx:#f2f2f7;--tx2:#aeaeb2;--ac:#0a84ff;
+  --yw:#ffd60a;--or:#ff9f0a;--gr:#30d158;
+  --key-bg:#3a3a3c;--key-bd:#555;--key-tx:#f2f2f7;
+  --key-fn:#ffd60a;--key-bopo:#aef;
 }
-body {
-  font-family: -apple-system,'PingFang TC','Noto Sans TC',sans-serif;
-  background: var(--bg); color: var(--text);
-  min-height: 100vh; display: flex; flex-direction: column;
-  align-items: center; padding: 28px 16px 60px; gap: 16px;
-}
-.header { text-align: center; }
-.header h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: .15em; }
-.header p  { font-size: .75rem; color: var(--text2); margin-top: 4px; }
+body{font-family:-apple-system,'PingFang TC','Noto Sans TC',sans-serif;
+  background:var(--bg);color:var(--tx);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:20px 12px 40px;gap:12px}
+h1{font-size:1.3rem;font-weight:700;letter-spacing:.12em}
+h1 span{font-size:.75rem;color:var(--tx2);font-weight:400;margin-left:8px;letter-spacing:0}
 
-/* Mode row */
-.mode-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 700px; }
-.mode-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 14px; border-radius: 20px; font-size: .8rem; font-weight: 600;
-  cursor: pointer; user-select: none; border: 1.5px solid transparent; transition: all .15s;
-}
-.mode-badge.zh { background: rgba(10,132,255,.15); border-color: rgba(10,132,255,.4); color: #60aaff; }
-.mode-badge.en { background: rgba(48,209,88,.12); border-color: rgba(48,209,88,.35); color: #30d158; }
-.mode-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.status-text { font-size: .73rem; color: var(--text2); flex: 1; }
+/* ── Mode indicator ── */
+.topbar{display:flex;align-items:center;gap:10px;width:100%;max-width:720px}
+.mode-pill{display:flex;align-items:center;gap:5px;padding:4px 12px;
+  border-radius:16px;font-size:.78rem;font-weight:600;cursor:pointer;
+  user-select:none;border:1.5px solid;transition:all .15s}
+.mode-pill.zh{background:rgba(10,132,255,.15);border-color:rgba(10,132,255,.4);color:#60aaff}
+.mode-pill.en{background:rgba(48,209,88,.12);border-color:rgba(48,209,88,.35);color:#30d158}
+.mode-pill.auto{background:rgba(255,214,10,.1);border-color:rgba(255,214,10,.35);color:#ffd60a}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.topbar-hint{font-size:.7rem;color:var(--tx2);flex:1}
 
-/* Composing bar */
-#composingBar {
-  width: 100%; max-width: 700px; min-height: 34px;
-  padding: 5px 12px; border-radius: 8px;
-  background: var(--surface2); border: 1.5px solid var(--border);
-  display: flex; align-items: center; gap: 6px;
-  opacity: 0; transition: opacity .15s; pointer-events: none;
-}
-#composingBar.active { opacity: 1; pointer-events: auto; }
-#composingBopo { font-size: 1rem; color: var(--yellow); font-weight: 700; letter-spacing: .1em; }
-#composingTone { font-size: .85rem; color: var(--orange); }
-.comp-hint { font-size: .68rem; color: var(--text2); margin-left: auto; }
+/* ── Composing bar ── */
+#compBar{width:100%;max-width:720px;min-height:32px;padding:4px 12px;
+  border-radius:7px;background:var(--sf2);border:1.5px solid var(--bd);
+  display:flex;align-items:center;gap:6px;
+  opacity:0;transition:opacity .15s;pointer-events:none}
+#compBar.on{opacity:1;pointer-events:auto}
+#compBopo{font-size:1rem;color:var(--yw);font-weight:700;letter-spacing:.08em}
+#compTone{font-size:.82rem;color:var(--or)}
+#compEn{font-size:1rem;color:var(--gr);font-weight:600;letter-spacing:.04em}
+.comp-hint{font-size:.65rem;color:var(--tx2);margin-left:auto}
 
-/* Candidate panel */
-#candidatePanel {
-  position: fixed; z-index: 9999;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.7);
-  display: none; min-width: 200px; max-width: 320px; overflow: hidden;
-}
-#candidatePanel.visible { display: block; }
-.cand-header {
-  padding: 6px 12px 4px; font-size: .68rem; color: var(--text2);
-  border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between;
-}
-.cand-bopo { color: var(--yellow); font-weight: 700; }
-#candidateList { list-style: none; padding: 4px 0; max-height: 260px; overflow-y: auto; }
-#candidateList li {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 14px; cursor: pointer; font-size: 1.05rem; transition: background .08s;
-}
-#candidateList li:hover { background: var(--surface2); }
-#candidateList li.selected { background: var(--accent); color: #fff; }
-#candidateList li .idx { font-size: .65rem; color: var(--text2); font-family: monospace; min-width: 12px; }
-#candidateList li.selected .idx { color: rgba(255,255,255,.55); }
-.cand-footer { padding: 4px 12px; font-size: .65rem; color: var(--text2); border-top: 1px solid var(--border); text-align: center; }
+/* ── Candidate popup ── */
+#candPanel{position:fixed;z-index:9999;background:var(--sf);
+  border:1px solid var(--bd);border-radius:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.7);
+  display:none;min-width:180px;max-width:360px;overflow:hidden}
+#candPanel.on{display:block}
+.cand-top{padding:5px 11px 3px;font-size:.65rem;color:var(--tx2);
+  border-bottom:1px solid var(--bd);display:flex;justify-content:space-between}
+.cand-bopo{color:var(--yw);font-weight:700}
+#candList{list-style:none;padding:3px 0;max-height:260px;overflow-y:auto}
+#candList li{display:flex;align-items:center;gap:8px;
+  padding:5px 13px;cursor:pointer;font-size:1.05rem;transition:background .07s}
+#candList li:hover{background:var(--sf2)}
+#candList li.sel{background:var(--ac);color:#fff}
+#candList li .idx{font-size:.62rem;color:var(--tx2);font-family:monospace;min-width:10px}
+#candList li.sel .idx{color:rgba(255,255,255,.5)}
+.cand-bot{padding:3px 11px;font-size:.62rem;color:var(--tx2);
+  border-top:1px solid var(--bd);text-align:center}
 
-/* Output textarea */
-#output {
-  width: 100%; max-width: 700px; min-height: 240px;
-  padding: 14px; border-radius: 10px;
-  background: var(--surface); border: 1.5px solid var(--border);
-  color: var(--text); font-size: 1.15rem; line-height: 1.9;
-  font-family: inherit; outline: none; resize: vertical;
-  caret-color: var(--accent); transition: border-color .2s;
-}
-#output:focus { border-color: var(--accent); }
+/* ── Output area ── */
+#output{width:100%;max-width:720px;min-height:200px;padding:14px;
+  border-radius:10px;background:var(--sf);border:1.5px solid var(--bd);
+  color:var(--tx);font-size:1.15rem;line-height:1.9;font-family:inherit;
+  outline:none;resize:vertical;caret-color:var(--ac);transition:border-color .2s}
+#output:focus{border-color:var(--ac)}
 
-/* Controls */
-.ctrl-row { display: flex; gap: 8px; width: 100%; max-width: 700px; flex-wrap: wrap; }
-.btn {
-  padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--text2); font-size: .8rem;
-  cursor: pointer; font-family: inherit; transition: all .15s;
-}
-.btn:hover { background: var(--surface2); color: var(--text); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.primary:hover { opacity: .85; }
+/* ── Buttons ── */
+.btnrow{display:flex;gap:8px;width:100%;max-width:720px;flex-wrap:wrap}
+.btn{padding:6px 15px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--sf);color:var(--tx2);font-size:.78rem;cursor:pointer;
+  font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--sf2);color:var(--tx)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.pri:hover{opacity:.85}
 
-/* Help pills */
-.help-row { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; max-width: 700px; }
-.pill {
-  background: var(--surface); border-radius: 6px; padding: 4px 9px;
-  font-size: .7rem; color: var(--text2); display: flex; align-items: center; gap: 4px;
-}
-.pill kbd {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 3px; padding: 1px 5px; font-size: .68rem; color: var(--text); font-family: monospace;
-}
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   KEYBOARD  (real layout)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.kb-wrap{width:100%;max-width:720px}
+.kb-toggle{font-size:.72rem;color:var(--tx2);cursor:pointer;
+  letter-spacing:.06em;padding:3px 0;display:flex;align-items:center;gap:5px;user-select:none}
+.kb-toggle .arr{display:inline-block;transition:transform .2s}
+.kb-toggle.open .arr{transform:rotate(90deg)}
+.keyboard{margin-top:8px;display:none;flex-direction:column;gap:5px}
+.keyboard.open{display:flex}
+.kb-row{display:flex;gap:4px;justify-content:center}
 
-/* Keymap */
-.keymap-wrap { width: 100%; max-width: 700px; }
-.keymap-toggle {
-  font-size: .76rem; color: var(--text2); cursor: pointer;
-  letter-spacing: .06em; padding: 4px 0;
-  display: flex; align-items: center; gap: 5px; user-select: none;
+/* Base key */
+.key{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:5px;background:var(--key-bg);border:1px solid var(--key-bd);
+  cursor:pointer;user-select:none;transition:background .1s,transform .08s;
+  position:relative;overflow:hidden;
+  min-width:44px;height:52px;padding:2px 4px;
 }
-.arrow { display: inline-block; transition: transform .2s; }
-.keymap-toggle.open .arrow { transform: rotate(90deg); }
-.keymap-grid {
-  display: grid; grid-template-columns: repeat(auto-fill,minmax(50px,1fr));
-  gap: 4px; margin-top: 8px; overflow: hidden; max-height: 0; transition: max-height .3s;
-}
-.keymap-grid.open { max-height: 400px; }
-.key-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 5px 2px; text-align: center; }
-.kc { display: block; font-family: monospace; font-size: .78rem; color: var(--accent); font-weight: 700; }
-.kb { display: block; font-size: .88rem; color: var(--text2); }
+.key:active{transform:scale(.93);background:#555}
+.key .fn{font-family:monospace;font-size:.72rem;font-weight:700;color:var(--key-fn);line-height:1}
+.key .bopo{font-size:.95rem;color:var(--key-bopo);line-height:1;margin-top:2px}
+.key .sub{font-size:.55rem;color:var(--tx2);line-height:1;margin-top:1px}
+
+/* Special keys */
+.key.wide{min-width:66px}
+.key.wider{min-width:88px}
+.key.widest{min-width:200px}
+.key.spc{background:rgba(10,132,255,.2);border-color:rgba(10,132,255,.5)}
+.key.spc .fn{color:#60aaff;font-size:.7rem}
+.key.action{min-width:56px;background:var(--sf2)}
+.key.action .fn{color:var(--tx2);font-size:.68rem}
+.key.tone2{background:rgba(255,159,10,.12);border-color:rgba(255,159,10,.4)}
+.key.tone2 .fn{color:var(--or)}
+.key.shift-key{min-width:80px}
+
+/* Shortcut pills */
+.pills{display:flex;flex-wrap:wrap;gap:5px;width:100%;max-width:720px}
+.pill{background:var(--sf);border-radius:5px;padding:3px 8px;
+  font-size:.68rem;color:var(--tx2);display:flex;align-items:center;gap:3px}
+.pill kbd{background:var(--sf2);border:1px solid var(--bd);border-radius:3px;
+  padding:1px 4px;font-size:.66rem;color:var(--tx);font-family:monospace}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>注音輸入法</h1>
-  <p>離線 &middot; 繁體中文 &middot; 大千式 &middot; 中英混打</p>
-</div>
+<h1>注音輸入法 <span>離線 · 繁體中文 · 自動偵測中英</span></h1>
 
-<div class="mode-row">
-  <div class="mode-badge zh" id="modeBadge" onclick="toggleMode()">
-    <span class="mode-dot"></span><span id="modeText">中文</span>
+<div class="topbar">
+  <div class="mode-pill auto" id="modePill" onclick="cycleMode()">
+    <span class="dot"></span><span id="modeTxt">自動</span>
   </div>
-  <div class="status-text" id="statusText">Shift 切換中英文模式</div>
+  <div class="topbar-hint" id="topHint">正在輸入英文時自動切換，打注音鍵自動切換中文</div>
 </div>
 
-<div id="composingBar">
-  <span id="composingBopo"></span>
-  <span id="composingTone"></span>
-  <span class="comp-hint">↑↓ 選字 &nbsp;·&nbsp; Space/6/3/4/7 聲調自動上字 &nbsp;·&nbsp; Enter 首字 &nbsp;·&nbsp; Esc 取消</span>
+<div id="compBar">
+  <span id="compBopo"></span>
+  <span id="compTone"></span>
+  <span id="compEn"></span>
+  <span class="comp-hint">↑↓選字 · Space/Enter確認 · Esc取消</span>
 </div>
 
-<div id="candidatePanel">
-  <div class="cand-header">
-    <span>候選：<span class="cand-bopo" id="candBopo"></span></span>
-    <span id="candPage"></span>
+<div id="candPanel">
+  <div class="cand-top">
+    <span>候選：<span class="cand-bopo" id="candLabel"></span></span>
+    <span id="candPg"></span>
   </div>
-  <ul id="candidateList"></ul>
-  <div class="cand-footer">↑↓ 移動選字 &nbsp;·&nbsp; PgUp/PgDn 換頁 &nbsp;·&nbsp; 1–9 快選</div>
+  <ul id="candList"></ul>
+  <div class="cand-bot">↑↓ 移動 · PgDn/PgUp 換頁 · 1–9 快選</div>
 </div>
 
-<textarea id="output" placeholder="在此輸入 — 中英文皆可，Shift 切換模式" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+<textarea id="output" placeholder="在此輸入 — 自動判斷中文/英文" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
 
-<div class="ctrl-row">
-  <button class="btn primary" onclick="copyOutput()">複製全文</button>
-  <button class="btn" onclick="clearOutput()">清除</button>
-  <button class="btn" onclick="toggleMode()">切換中 / 英</button>
+<div class="btnrow">
+  <button class="btn pri" onclick="copyOut()">複製</button>
+  <button class="btn" onclick="clearOut()">清除</button>
+  <button class="btn" onclick="cycleMode()">切換模式</button>
 </div>
 
-<div class="help-row">
-  <div class="pill"><kbd>Shift</kbd> 切換中英</div>
-  <div class="pill"><kbd>Space</kbd>一聲 <kbd>6</kbd>二 <kbd>3</kbd>三 <kbd>4</kbd>四 <kbd>7</kbd>輕 → 自動上字</div>
-  <div class="pill"><kbd>Space</kbd><kbd>Enter</kbd> 選首字</div>
-  <div class="pill"><kbd>↑</kbd><kbd>↓</kbd> 瀏覽候選</div>
-  <div class="pill"><kbd>PgDn</kbd><kbd>PgUp</kbd> 換頁</div>
-  <div class="pill"><kbd>1–9</kbd> 快速選字</div>
-  <div class="pill"><kbd>Esc</kbd> 取消組字</div>
-  <div class="pill"><kbd>Bksp</kbd> 刪注音</div>
+<div class="pills">
+  <div class="pill"><kbd>Space</kbd>一聲確認</div>
+  <div class="pill"><kbd>6</kbd>二聲 <kbd>3</kbd>三聲 <kbd>4</kbd>四聲 <kbd>7</kbd>輕聲 → 自動上字</div>
+  <div class="pill"><kbd>↑</kbd><kbd>↓</kbd>選字</div>
+  <div class="pill"><kbd>PgDn</kbd>換頁</div>
+  <div class="pill"><kbd>1–9</kbd>快選</div>
+  <div class="pill"><kbd>Esc</kbd>取消</div>
+  <div class="pill"><kbd>Shift</kbd>強制切英</div>
 </div>
 
-<div class="keymap-wrap">
-  <div class="keymap-toggle" id="keymapToggle" onclick="toggleKeymap()">
-    <span class="arrow">▶</span> 注音鍵盤對照（大千式）
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ KEYBOARD ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<div class="kb-wrap">
+  <div class="kb-toggle" id="kbToggle" onclick="toggleKb()">
+    <span class="arr">▶</span> 虛擬鍵盤（點擊輸入）
   </div>
-  <div class="keymap-grid" id="keymapGrid"></div>
+  <div class="keyboard" id="keyboard"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════
-// 大千式鍵盤
-// ═══════════════════════════════════════════════
-const KEYMAP = {
+// ══════════════════════════════════════════════════════════════
+// DICTIONARY  (tone appended as digit 1-5)
+// ══════════════════════════════════════════════════════════════
+const D={'ㄅㄚ1':'八巴芭疤叭扒捌吧','ㄅㄚ2':'拔跋茇','ㄅㄚ3':'把靶','ㄅㄚ4':'爸罷壩霸','ㄅㄚ5':'吧','ㄅㄛ1':'玻波菠撥剝搏伯','ㄅㄛ2':'伯博薄脖泊駁勃','ㄅㄛ3':'播簸跛','ㄅㄛ4':'博礴','ㄅㄞ1':'掰','ㄅㄞ2':'白','ㄅㄞ3':'百擺柏','ㄅㄞ4':'拜敗唄','ㄅㄟ1':'杯悲卑北背被','ㄅㄟ3':'被鋇','ㄅㄟ4':'背倍輩貝備憊','ㄅㄠ1':'包胞苞炮剝雹抱','ㄅㄠ2':'雹','ㄅㄠ3':'飽寶保堡','ㄅㄠ4':'豹暴報抱爆鮑刨','ㄅㄢ1':'班般斑頒搬扳','ㄅㄢ3':'板版扳辦','ㄅㄢ4':'辦半瓣伴絆','ㄅㄣ1':'奔賁本','ㄅㄣ3':'本笨','ㄅㄤ1':'幫邦梆','ㄅㄤ3':'綁榜','ㄅㄤ4':'棒磅謗傍蚌','ㄅㄥ1':'崩繃','ㄅㄥ3':'繃','ㄅㄥ4':'蚌迸泵','ㄅㄧ1':'逼鼻筆比','ㄅㄧ3':'筆比鄙匕彼','ㄅㄧ4':'必畢閉幣璧碧弊斃壁避臂','ㄅㄧㄢ1':'邊鞭','ㄅㄧㄢ3':'扁貶匾','ㄅㄧㄢ4':'變便辮遍','ㄅㄧㄣ1':'賓濱','ㄅㄧㄣ4':'鬢','ㄅㄧㄥ1':'冰兵丙','ㄅㄧㄥ3':'丙','ㄅㄧㄥ4':'病並','ㄅㄨ1':'不哺捕布補','ㄅㄨ3':'補堡卜捕哺','ㄅㄨ4':'布步部簿瀑不','ㄆㄚ1':'趴啪','ㄆㄚ2':'爬耙琶','ㄆㄚ4':'怕帕','ㄆㄛ1':'坡頗','ㄆㄛ2':'婆','ㄆㄛ4':'破魄迫粕','ㄆㄞ1':'拍','ㄆㄞ2':'排牌徘','ㄆㄞ4':'派','ㄆㄟ1':'胚呸','ㄆㄟ2':'培陪賠','ㄆㄟ4':'佩','ㄆㄠ1':'拋泡','ㄆㄠ2':'跑袍咆炮刨','ㄆㄠ3':'跑','ㄆㄠ4':'炮泡','ㄆㄢ1':'盤','ㄆㄢ2':'盤磐','ㄆㄢ4':'判盼叛畔','ㄆㄣ1':'噴','ㄆㄣ2':'盆','ㄆㄤ2':'旁龐膀螃','ㄆㄤ4':'胖','ㄆㄥ1':'烹砰','ㄆㄥ2':'朋棚蓬彭澎','ㄆㄥ4':'碰','ㄆㄧ1':'批披劈辟','ㄆㄧ2':'皮疲琵脾','ㄆㄧ3':'痞匹癖','ㄆㄧ4':'屁闢僻譬','ㄆㄧㄢ1':'篇偏','ㄆㄧㄢ2':'便篇','ㄆㄧㄢ4':'片騙','ㄆㄧㄣ1':'拼品','ㄆㄧㄣ2':'貧頻蘋','ㄆㄧㄣ3':'品','ㄆㄧㄥ1':'乒','ㄆㄧㄥ2':'平評憑蘋','ㄆㄨ1':'撲鋪樸','ㄆㄨ2':'葡僕','ㄆㄨ3':'普樸譜','ㄆㄨ4':'鋪暴瀑','ㄇㄚ1':'媽嗎麻','ㄇㄚ2':'麻馬嗎','ㄇㄚ3':'馬碼螞','ㄇㄚ4':'罵','ㄇㄚ5':'嗎麼','ㄇㄛ1':'摩魔抹模','ㄇㄛ2':'磨膜茉抹摸','ㄇㄛ4':'默漠墨末沫','ㄇㄟ1':'眉梅沒','ㄇㄟ2':'沒梅媒霉','ㄇㄟ3':'每美','ㄇㄟ4':'妹昧媚','ㄇㄠ1':'貓毛茅矛','ㄇㄠ2':'毛','ㄇㄠ3':'卯冒','ㄇㄠ4':'帽貌冒茂貿','ㄇㄡ2':'謀某','ㄇㄡ3':'某','ㄇㄢ1':'蠻','ㄇㄢ2':'蠻滿','ㄇㄢ3':'滿','ㄇㄢ4':'慢漫曼蔓','ㄇㄣ1':'悶門','ㄇㄣ2':'門們','ㄇㄣ4':'悶','ㄇㄤ2':'芒茫忙盲','ㄇㄤ3':'莽蟒','ㄇㄥ2':'蒙朦','ㄇㄧ2':'謎眯迷','ㄇㄧ3':'米','ㄇㄧ4':'蜜秘密覓','ㄇㄧㄝ4':'滅','ㄇㄧㄠ2':'苗描','ㄇㄧㄠ3':'秒渺','ㄇㄧㄠ4':'廟妙','ㄇㄧㄢ2':'棉眠面綿','ㄇㄧㄢ3':'免勉','ㄇㄧㄢ4':'面麵','ㄇㄧㄣ2':'民敏','ㄇㄧㄥ2':'明鳴名','ㄇㄧㄥ4':'命','ㄇㄨ3':'母','ㄇㄨ4':'木目牧墓幕慕暮畝','ㄈㄚ1':'發法','ㄈㄚ3':'法乏伐','ㄈㄚ4':'法罰','ㄈㄛ2':'佛','ㄈㄟ1':'飛非肺','ㄈㄟ2':'肥','ㄈㄟ4':'費廢肺吠','ㄈㄡ3':'否','ㄈㄢ1':'翻番帆凡','ㄈㄢ2':'凡繁','ㄈㄢ3':'反返','ㄈㄢ4':'飯泛範','ㄈㄣ1':'分紛','ㄈㄣ3':'粉','ㄈㄣ4':'份奮憤分','ㄈㄤ1':'方芳','ㄈㄤ2':'坊房防','ㄈㄤ3':'仿訪','ㄈㄤ4':'放','ㄈㄥ1':'風楓豐蜂封','ㄈㄥ2':'縫','ㄈㄥ4':'奉縫鳳鋒','ㄈㄨ1':'夫敷膚孵','ㄈㄨ2':'浮服福符','ㄈㄨ3':'府腐輔父','ㄈㄨ4':'父付附富腹負副賦','ㄉㄚ2':'達答打','ㄉㄚ3':'打','ㄉㄚ4':'大答','ㄉㄜ1':'的','ㄉㄜ2':'的得德','ㄉㄜ5':'的','ㄉㄞ1':'帶待代','ㄉㄞ3':'待逮','ㄉㄞ4':'戴大帶代貸袋','ㄉㄟ3':'得','ㄉㄠ1':'刀叨','ㄉㄠ3':'島倒導道','ㄉㄠ4':'道到盜稻','ㄉㄢ1':'單丹耽擔','ㄉㄢ3':'膽旦','ㄉㄢ4':'但旦淡彈蛋誕','ㄉㄤ1':'當','ㄉㄤ3':'黨擋','ㄉㄤ4':'當蕩檔','ㄉㄥ1':'燈','ㄉㄥ3':'等','ㄉㄥ4':'鄧','ㄉㄧ1':'低滴堤提','ㄉㄧ2':'地堤敵','ㄉㄧ3':'底抵','ㄉㄧ4':'地帝弟第遞','ㄉㄧㄝ2':'爹','ㄉㄧㄝ4':'疊跌蝶','ㄉㄧㄠ1':'雕刁叼凋','ㄉㄧㄠ4':'掉釣調','ㄉㄧㄢ1':'點電店','ㄉㄧㄢ3':'典點','ㄉㄧㄢ4':'店電殿墊','ㄉㄧㄥ1':'頂丁釘','ㄉㄧㄥ3':'頂','ㄉㄧㄥ4':'定訂','ㄉㄨ1':'都督','ㄉㄨ2':'讀毒獨','ㄉㄨ3':'賭堵','ㄉㄨ4':'度渡肚','ㄉㄨㄟ4':'對','ㄉㄨㄢ1':'端','ㄉㄨㄢ3':'短','ㄉㄨㄢ4':'段斷','ㄉㄨㄣ1':'敦蹲','ㄉㄨㄣ4':'頓盾','ㄉㄨㄥ1':'東冬','ㄉㄨㄥ3':'董懂','ㄉㄨㄥ4':'動棟凍洞','ㄊㄚ1':'他她它塌','ㄊㄚ3':'塔踏','ㄊㄚ4':'踏塌','ㄊㄜ4':'特','ㄊㄞ1':'台胎苔抬','ㄊㄞ2':'台臺','ㄊㄞ4':'太態泰','ㄊㄠ1':'掏滔濤','ㄊㄠ2':'陶桃逃','ㄊㄠ3':'討','ㄊㄠ4':'套','ㄊㄢ1':'貪攤','ㄊㄢ2':'談潭','ㄊㄢ4':'歎炭探','ㄊㄤ1':'湯唐','ㄊㄤ2':'糖唐堂塘','ㄊㄥ2':'疼','ㄊㄧ1':'踢','ㄊㄧ2':'題提','ㄊㄧ3':'體','ㄊㄧ4':'替剃','ㄊㄧㄝ1':'貼','ㄊㄧㄝ3':'鐵','ㄊㄧㄠ1':'挑','ㄊㄧㄠ2':'條跳調','ㄊㄧㄠ4':'跳調挑','ㄊㄧㄢ1':'天田添','ㄊㄧㄢ2':'田甜','ㄊㄧㄥ1':'廳聽','ㄊㄧㄥ2':'停亭廳','ㄊㄧㄥ3':'挺','ㄊㄧㄥ4':'聽庭','ㄊㄨ1':'土禿','ㄊㄨ2':'圖途徒','ㄊㄨ3':'土吐兔','ㄊㄨ4':'吐兔','ㄊㄨㄟ1':'推','ㄊㄨㄟ4':'退','ㄊㄨㄢ2':'團','ㄊㄨㄣ1':'吞','ㄊㄨㄥ1':'通','ㄊㄨㄥ2':'同桐瞳童','ㄊㄨㄥ4':'痛','ㄋㄚ1':'拿','ㄋㄚ2':'拿那','ㄋㄚ3':'哪','ㄋㄚ4':'那納','ㄋㄚ5':'哪','ㄋㄜ2':'呢','ㄋㄜ5':'呢','ㄋㄞ3':'奶','ㄋㄞ4':'耐奈','ㄋㄟ3':'哪','ㄋㄠ3':'腦惱','ㄋㄠ4':'鬧','ㄋㄢ2':'難男南','ㄋㄢ4':'難','ㄋㄤ2':'囊','ㄋㄥ2':'能','ㄋㄧ3':'你妳','ㄋㄧㄠ3':'鳥','ㄋㄧㄢ2':'年念','ㄋㄧㄢ4':'念','ㄋㄧㄣ2':'您','ㄋㄧㄥ2':'凝寧','ㄋㄨ3':'努','ㄋㄨ4':'怒','ㄋㄨㄢ3':'暖','ㄋㄩ3':'女','ㄌㄚ1':'拉啦','ㄌㄚ4':'辣蠟','ㄌㄚ5':'啦','ㄌㄜ4':'了勒','ㄌㄜ5':'了','ㄌㄞ2':'來','ㄌㄠ2':'勞老撈','ㄌㄠ3':'老','ㄌㄠ4':'澇','ㄌㄡ2':'樓','ㄌㄡ4':'漏陋','ㄌㄢ2':'藍蘭','ㄌㄢ3':'懶覽攬','ㄌㄢ4':'爛','ㄌㄤ2':'郎廊狼','ㄌㄥ3':'冷','ㄌㄧ2':'離力','ㄌㄧ3':'里理李鯉','ㄌㄧ4':'力立利例麗厲','ㄌㄧㄝ4':'列烈裂','ㄌㄧㄠ2':'聊療瞭','ㄌㄧㄠ3':'了料瞭','ㄌㄧㄠ4':'料','ㄌㄧㄢ2':'聯廉','ㄌㄧㄢ3':'臉','ㄌㄧㄢ4':'戀練煉','ㄌㄧㄣ2':'林臨','ㄌㄧㄣ4':'吝','ㄌㄧㄥ2':'零鈴靈領','ㄌㄧㄥ3':'領令','ㄌㄧㄥ4':'另令','ㄌㄨ2':'路盧爐','ㄌㄨ4':'路錄陸鹿','ㄌㄨㄢ2':'亂','ㄌㄨㄣ2':'論輪','ㄌㄨㄣ4':'論','ㄌㄨㄥ2':'龍隆','ㄌㄩ3':'呂旅','ㄌㄩ4':'律旅綠','ㄍㄜ1':'歌哥割','ㄍㄜ2':'格葛閣','ㄍㄜ4':'個各','ㄍㄟ3':'給','ㄍㄠ1':'高告','ㄍㄠ3':'稿搞','ㄍㄠ4':'告','ㄍㄢ1':'乾甘肝幹竿','ㄍㄢ3':'感趕敢','ㄍㄢ4':'幹','ㄍㄤ1':'鋼剛缸','ㄍㄤ3':'崗','ㄍㄨ1':'孤姑估鼓','ㄍㄨ3':'古鼓股','ㄍㄨ4':'固故顧雇','ㄍㄨㄚ1':'瓜刮','ㄍㄨㄚ3':'掛','ㄍㄨㄚ4':'掛','ㄍㄨㄞ1':'乖','ㄍㄨㄞ4':'怪','ㄍㄨㄟ1':'規龜歸','ㄍㄨㄟ4':'貴跪','ㄍㄨㄢ1':'關官冠觀','ㄍㄨㄢ3':'管館','ㄍㄨㄢ4':'慣貫','ㄍㄨㄣ3':'滾棍','ㄍㄨㄤ1':'光廣','ㄍㄨㄤ3':'廣','ㄍㄨㄥ1':'工公功弓宮','ㄍㄨㄥ4':'共貢供','ㄎㄜ1':'科棵','ㄎㄜ3':'可','ㄎㄜ4':'刻課客','ㄎㄞ1':'開','ㄎㄠ3':'考','ㄎㄠ4':'靠','ㄎㄡ3':'口','ㄎㄡ4':'扣','ㄎㄢ1':'看砍','ㄎㄢ3':'砍坎','ㄎㄢ4':'看','ㄎㄤ1':'康','ㄎㄤ4':'抗','ㄎㄨ1':'哭窟','ㄎㄨ3':'苦','ㄎㄨ4':'酷庫褲','ㄎㄨㄚ1':'誇','ㄎㄨㄚ3':'跨','ㄎㄨㄚ4':'跨','ㄎㄨㄞ4':'快筷塊','ㄎㄨㄢ1':'寬','ㄎㄨㄣ3':'困','ㄎㄨㄣ4':'困','ㄎㄨㄥ1':'空','ㄎㄨㄥ3':'孔恐','ㄎㄨㄥ4':'空控','ㄏㄚ1':'哈','ㄏㄜ1':'喝','ㄏㄜ2':'和河荷何合核','ㄏㄜ4':'和賀','ㄏㄞ2':'還孩海','ㄏㄞ3':'海','ㄏㄞ4':'害','ㄏㄟ1':'黑嘿','ㄏㄠ3':'好','ㄏㄠ4':'好號','ㄏㄢ2':'寒含漢','ㄏㄢ4':'漢','ㄏㄣ2':'很','ㄏㄣ3':'很狠','ㄏㄣ4':'恨','ㄏㄤ2':'行航','ㄏㄥ2':'衡橫','ㄏㄨ1':'呼忽','ㄏㄨ2':'湖壺胡蝴','ㄏㄨ3':'虎互戶','ㄏㄨ4':'護戶互花','ㄏㄨㄚ2':'華滑話花','ㄏㄨㄚ4':'化畫話','ㄏㄨㄞ2':'壞懷','ㄏㄨㄞ4':'壞','ㄏㄨㄟ2':'回會','ㄏㄨㄟ4':'會慧','ㄏㄨㄢ2':'還歡環','ㄏㄨㄢ3':'緩','ㄏㄨㄢ4':'換幻','ㄏㄨㄣ2':'魂','ㄏㄨㄣ4':'婚混','ㄏㄨㄤ2':'黃皇','ㄏㄨㄤ3':'謊','ㄏㄨㄥ2':'紅洪弘','ㄐㄧ1':'機積擊雞基','ㄐㄧ2':'及集極急緝','ㄐㄧ3':'己幾擠','ㄐㄧ4':'記計季寄繼際','ㄐㄧㄚ1':'家加佳','ㄐㄧㄚ3':'假甲','ㄐㄧㄚ4':'假架駕嫁價','ㄐㄧㄝ1':'街揭接','ㄐㄧㄝ2':'節傑','ㄐㄧㄝ3':'解姐','ㄐㄧㄝ4':'界借介','ㄐㄧㄠ1':'交教焦','ㄐㄧㄠ3':'叫腳','ㄐㄧㄠ4':'叫教','ㄐㄧㄡ3':'舊酒九久','ㄐㄧㄡ4':'就舊救','ㄐㄧㄢ1':'間尖堅','ㄐㄧㄢ3':'簡撿','ㄐㄧㄢ4':'見建健間','ㄐㄧㄣ1':'今金斤巾','ㄐㄧㄣ3':'緊謹','ㄐㄧㄣ4':'近進','ㄐㄧㄤ1':'江將','ㄐㄧㄤ3':'獎','ㄐㄧㄤ4':'醬','ㄐㄧㄥ1':'京精驚','ㄐㄧㄥ3':'境井靜景警','ㄐㄧㄥ4':'靜鏡淨敬竟','ㄐㄩ1':'居','ㄐㄩ3':'舉','ㄐㄩ4':'句鋸聚具劇','ㄐㄩㄝ2':'決絕覺角','ㄐㄩㄝ4':'決絕覺','ㄐㄩㄢ1':'卷捲','ㄐㄩㄢ3':'捲','ㄐㄩㄢ4':'卷倦','ㄐㄩㄣ1':'軍均君','ㄑㄧ1':'七期騎妻棲','ㄑㄧ2':'奇期其','ㄑㄧ3':'起企','ㄑㄧ4':'氣器棄','ㄑㄧㄝ1':'切','ㄑㄧㄝ4':'切','ㄑㄧㄠ1':'敲翹','ㄑㄧㄠ2':'橋喬','ㄑㄧㄠ3':'俏瞧','ㄑㄧㄡ1':'秋丘','ㄑㄧㄢ1':'千牽前錢','ㄑㄧㄢ2':'前錢','ㄑㄧㄢ4':'欠歉','ㄑㄧㄣ1':'親','ㄑㄧㄤ1':'搶強','ㄑㄧㄤ2':'牆強','ㄑㄧㄤ3':'搶','ㄑㄧㄥ1':'清輕青情','ㄑㄧㄥ2':'情','ㄑㄧㄥ3':'請','ㄑㄧㄥ4':'慶','ㄑㄩ1':'區曲','ㄑㄩ3':'取','ㄑㄩ4':'去趣','ㄑㄩㄝ2':'卻缺','ㄑㄩㄝ4':'確卻','ㄑㄩㄢ1':'圈全勸','ㄑㄩㄢ2':'全','ㄑㄩㄢ4':'勸','ㄑㄩㄣ2':'群','ㄒㄧ1':'西希昔稀息吸','ㄒㄧ2':'習席','ㄒㄧ3':'洗喜','ㄒㄧ4':'細系戲','ㄒㄧㄚ1':'蝦嚇','ㄒㄧㄚ4':'下夏嚇','ㄒㄧㄝ1':'些寫歇鞋','ㄒㄧㄝ2':'邪謝斜','ㄒㄧㄝ3':'寫','ㄒㄧㄝ4':'謝卸','ㄒㄧㄠ1':'消小笑宵','ㄒㄧㄠ3':'小曉','ㄒㄧㄠ4':'笑效孝','ㄒㄧㄡ1':'修羞','ㄒㄧㄢ1':'先仙纖鮮','ㄒㄧㄢ2':'閒賢','ㄒㄧㄢ3':'顯險現','ㄒㄧㄢ4':'現線限','ㄒㄧㄣ1':'心新信','ㄒㄧㄣ4':'信','ㄒㄧㄤ1':'香相想鄉','ㄒㄧㄤ2':'像詳','ㄒㄧㄤ3':'想享響','ㄒㄧㄤ4':'向項像','ㄒㄧㄥ1':'星行形興','ㄒㄧㄥ2':'行形','ㄒㄧㄥ4':'性興幸','ㄒㄩ1':'需虛','ㄒㄩ3':'許','ㄒㄩ4':'續絮序','ㄒㄩㄝ2':'學','ㄒㄩㄝ3':'雪','ㄒㄩㄢ1':'宣選','ㄒㄩㄢ2':'旋','ㄒㄩㄢ3':'選','ㄒㄩㄣ2':'尋巡','ㄒㄩㄣ4':'訓','ㄓㄜ2':'者折','ㄓㄜ4':'這','ㄓㄜ5':'著','ㄓㄞ1':'摘齋','ㄓㄞ4':'債','ㄓㄠ1':'找招昭照','ㄓㄠ3':'找','ㄓㄠ4':'照罩','ㄓㄢ1':'沾占站','ㄓㄢ4':'站戰佔','ㄓㄣ1':'針真珍','ㄓㄣ3':'枕','ㄓㄣ4':'陣','ㄓㄤ1':'章張長','ㄓㄤ3':'長掌','ㄓㄤ4':'脹漲帳','ㄓㄥ1':'蒸爭整正','ㄓㄥ3':'整正拯','ㄓㄥ4':'正政症','ㄓㄧ1':'知之支枝','ㄓㄧ3':'只止指紙','ㄓㄧ4':'至智治制','ㄓㄨ1':'珠豬朱','ㄓㄨ2':'竹','ㄓㄨ3':'主煮','ㄓㄨ4':'住助注著','ㄓㄨㄚ1':'抓爪','ㄓㄨㄟ1':'追','ㄓㄨㄟ4':'墜','ㄓㄨㄢ1':'專','ㄓㄨㄢ3':'轉','ㄓㄨㄢ4':'傳賺','ㄓㄨㄣ3':'準','ㄓㄨㄤ1':'裝莊','ㄓㄨㄤ4':'撞狀','ㄓㄨㄥ1':'中鐘忠終','ㄓㄨㄥ4':'種重眾','ㄔㄜ1':'車','ㄔㄞ1':'拆猜','ㄔㄠ1':'超抄','ㄔㄠ3':'炒','ㄔㄢ3':'產','ㄔㄣ1':'沉稱','ㄔㄣ2':'陳臣沉','ㄔㄣ4':'趁','ㄔㄤ1':'場','ㄔㄤ2':'長場常','ㄔㄤ3':'廠','ㄔㄤ4':'唱','ㄔㄥ1':'稱成城承','ㄔㄥ2':'成城乘誠','ㄔㄥ3':'程','ㄔㄥ4':'秤稱','ㄔㄧ1':'吃','ㄔㄨ1':'出初','ㄔㄨ3':'處','ㄔㄨ4':'處','ㄔㄨㄟ1':'吹','ㄔㄨㄢ1':'川穿傳','ㄔㄨㄢ2':'傳船','ㄔㄨㄢ3':'喘','ㄔㄨㄣ1':'春','ㄔㄨㄤ1':'窗','ㄔㄨㄤ4':'創闖','ㄔㄨㄥ1':'充沖衝崇','ㄔㄨㄥ2':'蟲重','ㄔㄨㄥ4':'重衝','ㄕㄜ2':'蛇舌','ㄕㄜ4':'射設社','ㄕㄠ1':'燒梢','ㄕㄠ3':'少','ㄕㄠ4':'少紹哨','ㄕㄢ1':'山閃衫','ㄕㄢ4':'善扇','ㄕㄣ1':'身申深','ㄕㄣ2':'神什','ㄕㄣ3':'審','ㄕㄣ4':'慎腎','ㄕㄤ1':'傷商','ㄕㄤ4':'上','ㄕㄥ1':'升生聲','ㄕㄥ4':'剩勝聖','ㄕㄧ1':'詩師獅失屍','ㄕㄧ2':'時石是實十','ㄕㄧ3':'史使始士試','ㄕㄧ4':'是事示士式視世','ㄕㄨ1':'書輸疏','ㄕㄨ2':'熟塾','ㄕㄨ3':'屬數樹','ㄕㄨ4':'樹數術束','ㄕㄨㄞ1':'摔衰','ㄕㄨㄞ4':'率帥','ㄕㄨㄟ3':'水','ㄕㄨㄟ4':'睡稅','ㄕㄨㄢ1':'拴栓','ㄕㄨㄣ4':'順','ㄕㄨㄤ1':'雙','ㄖㄜ4':'熱','ㄖㄣ2':'人任','ㄖㄣ4':'任認刃','ㄖㄥ2':'仍','ㄖㄧ4':'日','ㄖㄨ2':'如入','ㄖㄨ4':'入','ㄖㄨㄢ3':'軟','ㄖㄨㄣ4':'潤','ㄖㄨㄥ2':'融容','ㄗㄜ2':'則擇','ㄗㄞ1':'災栽','ㄗㄞ4':'在再載','ㄗㄠ1':'糟遭早','ㄗㄠ3':'早棗','ㄗㄠ4':'做造','ㄗㄢ1':'咱','ㄗㄢ4':'暫贊','ㄗㄣ3':'怎','ㄗㄤ1':'髒臟','ㄗㄤ4':'臟','ㄗㄥ1':'增曾','ㄗㄧ1':'資滋自','ㄗㄧ3':'字紫子自','ㄗㄧ4':'字自','ㄗㄨ1':'租組足','ㄗㄨ2':'族足','ㄗㄨ3':'祖組','ㄗㄨ4':'做族','ㄗㄨㄟ4':'最罪嘴醉','ㄗㄨㄣ1':'遵尊','ㄗㄨㄥ1':'總宗縱','ㄗㄨㄥ3':'總','ㄘㄜ4':'測策側','ㄘㄞ1':'猜','ㄘㄞ2':'才材財','ㄘㄞ4':'菜','ㄘㄠ3':'草','ㄘㄠ4':'操','ㄘㄢ1':'參餐','ㄘㄢ2':'蠶','ㄘㄤ1':'倉蒼','ㄘㄥ2':'曾層','ㄘㄧ2':'詞辭','ㄘㄧ4':'刺此次','ㄘㄨ1':'粗','ㄘㄨ4':'促','ㄘㄨㄣ1':'村','ㄘㄨㄣ2':'存','ㄘㄨㄥ2':'從叢','ㄙㄜ4':'色','ㄙㄠ3':'掃','ㄙㄢ1':'三散','ㄙㄢ4':'散','ㄙㄣ1':'森','ㄙㄤ1':'喪桑','ㄙㄤ4':'喪','ㄙㄥ1':'僧','ㄙㄧ1':'思絲撕','ㄙㄧ3':'死','ㄙㄧ4':'四似','ㄙㄨ1':'蘇','ㄙㄨ4':'速素訴宿塑','ㄙㄨㄟ1':'雖','ㄙㄨㄟ4':'歲碎','ㄙㄨㄣ1':'孫','ㄙㄨㄣ3':'損','ㄙㄨㄥ1':'松送','ㄙㄨㄥ4':'送頌','ㄧ1':'一衣','ㄧ3':'以已','ㄧ4':'意義易議亦','ㄧㄝ1':'耶爺','ㄧㄝ3':'也野','ㄧㄝ4':'夜業葉頁','ㄧㄡ2':'由油遊','ㄧㄡ3':'有友又','ㄧㄡ4':'又右有','ㄧㄢ1':'煙淹','ㄧㄢ2':'言鹽顏研','ㄧㄢ3':'眼演','ㄧㄢ4':'演驗艷','ㄧㄣ1':'音因陰','ㄧㄣ3':'引飲','ㄧㄣ4':'印','ㄧㄤ1':'央秧','ㄧㄤ2':'羊陽洋','ㄧㄤ3':'養癢','ㄧㄤ4':'樣','ㄧㄥ1':'英應鷹嬰','ㄧㄥ2':'迎營贏','ㄧㄥ4':'應映硬','ㄨ3':'五午舞武','ㄨ4':'物務誤霧','ㄨㄟ1':'威危微','ㄨㄟ2':'為圍維','ㄨㄟ3':'偉尾委','ㄨㄟ4':'位為','ㄨㄢ1':'彎灣','ㄨㄢ2':'完玩晚','ㄨㄢ3':'晚碗','ㄨㄢ4':'萬','ㄨㄣ2':'文問聞','ㄨㄣ4':'問','ㄨㄤ2':'王忘旺','ㄨㄤ3':'往','ㄨㄤ4':'旺望','ㄩ2':'魚于於餘','ㄩ3':'雨語玉與','ㄩ4':'遇育','ㄩㄝ4':'月越','ㄩㄣ2':'雲','ㄩㄣ4':'運韻','ㄩㄥ3':'永勇泳','ㄩㄥ4':'用'};
+
+// ══════════════════════════════════════════════════════════════
+// KEYMAP  大千式  key → bopomofo
+// ══════════════════════════════════════════════════════════════
+const KM={
   '1':'ㄅ','q':'ㄆ','a':'ㄇ','z':'ㄈ',
   '2':'ㄉ','w':'ㄊ','s':'ㄋ','x':'ㄌ',
   'e':'ㄍ','d':'ㄎ','c':'ㄏ',
@@ -192,546 +194,490 @@ const KEYMAP = {
   'u':'ㄧ','j':'ㄨ','m':'ㄩ',
   '8':'ㄚ','i':'ㄛ','k':'ㄜ',',':'ㄝ',
   '9':'ㄞ','o':'ㄟ','l':'ㄠ','.':'ㄡ',
-  '0':'ㄢ','p':'ㄣ',';':'ㄤ','/':'ㄥ','-':'ㄦ',
+  '0':'ㄢ','p':'ㄣ',';':'ㄤ','/':'ㄥ','-':'ㄦ'
 };
+// Tone key → internal tone digit
+const TK={'6':'2','3':'3','4':'4','7':'5'};
 
-// ═══════════════════════════════════════════════
-// 字典
-// ═══════════════════════════════════════════════
-const D = {};
-function w(k,s){ if(!D[k])D[k]=[]; for(const c of s) if(!D[k].includes(c))D[k].push(c); }
+// ══════════════════════════════════════════════════════════════
+// KEYBOARD LAYOUT (real physical layout)
+// Each key: [label/fn, bopoChar, subLabel?, extraClass?]
+// ══════════════════════════════════════════════════════════════
+const KB_ROWS = [
+  // Row 1: ` 1 2 3 4 5 6 7 8 9 0 - = Backspace
+  [
+    {fn:'`', sub:''},
+    {fn:'1', bopo:'ㄅ'},
+    {fn:'2', bopo:'ㄉ'},
+    {fn:'3', bopo:'', sub:'三聲', cls:'tone2'},
+    {fn:'4', bopo:'', sub:'四聲', cls:'tone2'},
+    {fn:'5', bopo:'ㄓ'},
+    {fn:'6', bopo:'', sub:'二聲', cls:'tone2'},
+    {fn:'7', bopo:'', sub:'輕聲', cls:'tone2'},
+    {fn:'8', bopo:'ㄚ'},
+    {fn:'9', bopo:'ㄞ'},
+    {fn:'0', bopo:'ㄢ'},
+    {fn:'-', bopo:'ㄦ'},
+    {fn:'=', sub:''},
+    {fn:'⌫', cls:'wider action', key:'Backspace'},
+  ],
+  // Row 2: Tab Q W E R T Y U I O P [ ] \
+  [
+    {fn:'Tab', cls:'wide action', key:'Tab'},
+    {fn:'Q', bopo:'ㄆ'},
+    {fn:'W', bopo:'ㄊ'},
+    {fn:'E', bopo:'ㄍ'},
+    {fn:'R', bopo:'ㄐ'},
+    {fn:'T', bopo:'ㄔ'},
+    {fn:'Y', bopo:'ㄗ'},
+    {fn:'U', bopo:'ㄧ'},
+    {fn:'I', bopo:'ㄛ'},
+    {fn:'O', bopo:'ㄟ'},
+    {fn:'P', bopo:'ㄣ'},
+    {fn:'[', sub:''},
+    {fn:']', sub:''},
+    {fn:'\\', sub:''},
+  ],
+  // Row 3: Caps A S D F G H J K L ; ' Enter
+  [
+    {fn:'Caps', cls:'wide action', key:'CapsLock'},
+    {fn:'A', bopo:'ㄇ'},
+    {fn:'S', bopo:'ㄋ'},
+    {fn:'D', bopo:'ㄎ'},
+    {fn:'F', bopo:'ㄑ'},
+    {fn:'G', bopo:'ㄕ'},
+    {fn:'H', bopo:'ㄘ'},
+    {fn:'J', bopo:'ㄨ'},
+    {fn:'K', bopo:'ㄜ'},
+    {fn:'L', bopo:'ㄠ'},
+    {fn:';', bopo:'ㄤ'},
+    {fn:"'", sub:''},
+    {fn:'Enter', cls:'wider action', key:'Enter'},
+  ],
+  // Row 4: Shift Z X C V B N M , . / Shift
+  [
+    {fn:'⇧', cls:'shift-key action', key:'ShiftLeft'},
+    {fn:'Z', bopo:'ㄈ'},
+    {fn:'X', bopo:'ㄌ'},
+    {fn:'C', bopo:'ㄏ'},
+    {fn:'V', bopo:'ㄒ'},
+    {fn:'B', bopo:'ㄖ'},
+    {fn:'N', bopo:'ㄙ'},
+    {fn:'M', bopo:'ㄩ'},
+    {fn:',', bopo:'ㄝ'},
+    {fn:'.', bopo:'ㄡ'},
+    {fn:'/', bopo:'ㄥ'},
+    {fn:'⇧', cls:'shift-key action', key:'ShiftRight'},
+  ],
+  // Row 5: Space
+  [
+    {fn:'一聲 / 確認', cls:'widest spc', key:'Space'},
+  ],
+];
 
-w('ㄅㄚ1','八芭疤扒叭');w('ㄅㄚ2','拔跋');w('ㄅㄚ3','把靶');w('ㄅㄚ4','爸罷壩霸');
-w('ㄅㄛ1','玻波菠撥剝');w('ㄅㄛ2','伯博薄脖泊駁');w('ㄅㄛ3','播簸');w('ㄅㄛ4','博礴');
-w('ㄅㄞ1','掰');w('ㄅㄞ2','白');w('ㄅㄞ3','百擺柏');w('ㄅㄞ4','拜敗唄');
-w('ㄅㄟ1','杯悲卑北');w('ㄅㄟ3','被鋇');w('ㄅㄟ4','背倍輩貝備');
-w('ㄅㄠ1','包胞苞炮剝');w('ㄅㄠ3','飽寶保堡');w('ㄅㄠ4','豹暴報抱爆鮑');
-w('ㄅㄢ1','班般斑頒搬');w('ㄅㄢ3','板版');w('ㄅㄢ4','辦半瓣');
-w('ㄅㄣ1','奔');w('ㄅㄣ3','本笨');
-w('ㄅㄤ1','幫邦梆');w('ㄅㄤ3','綁榜');w('ㄅㄤ4','棒磅謗');
-w('ㄅㄥ1','崩繃');w('ㄅㄥ4','蚌迸');
-w('ㄅㄧ1','逼鼻');w('ㄅㄧ3','筆比鄙匕');w('ㄅㄧ4','必畢閉幣碧弊斃壁避');
-w('ㄅㄧㄢ1','邊鞭');w('ㄅㄧㄢ3','扁貶匾');w('ㄅㄧㄢ4','變便辮遍');
-w('ㄅㄧㄣ1','賓濱');w('ㄅㄧㄣ4','鬢');
-w('ㄅㄧㄥ1','冰兵丙');w('ㄅㄧㄥ4','病');
-w('ㄅㄨ1','不哺');w('ㄅㄨ3','補卜捕');w('ㄅㄨ4','布步部簿');
-w('ㄆㄚ1','趴啪');w('ㄆㄚ2','爬耙琶');w('ㄆㄚ4','怕');
-w('ㄆㄛ1','坡頗');w('ㄆㄛ2','婆');w('ㄆㄛ4','破魄迫');
-w('ㄆㄞ1','拍');w('ㄆㄞ2','排牌');w('ㄆㄞ4','派');
-w('ㄆㄟ1','胚呸');w('ㄆㄟ2','培陪賠');
-w('ㄆㄠ1','拋泡');w('ㄆㄠ2','跑袍咆');w('ㄆㄠ3','跑');w('ㄆㄠ4','炮泡');
-w('ㄆㄢ1','盤');w('ㄆㄢ2','盤');w('ㄆㄢ4','判盼叛');
-w('ㄆㄣ1','噴');w('ㄆㄣ2','盆');
-w('ㄆㄤ2','旁龐');w('ㄆㄤ4','胖');
-w('ㄆㄥ1','烹砰');w('ㄆㄥ2','朋棚蓬彭');w('ㄆㄥ4','碰');
-w('ㄆㄧ1','批披劈');w('ㄆㄧ2','皮疲琵脾');w('ㄆㄧ3','痞匹');w('ㄆㄧ4','屁闢僻譬');
-w('ㄆㄧㄢ1','篇偏');w('ㄆㄧㄢ4','片騙');
-w('ㄆㄧㄣ1','拼');w('ㄆㄧㄣ2','貧頻');w('ㄆㄧㄣ3','品');
-w('ㄆㄧㄥ2','平評憑');
-w('ㄆㄨ1','撲鋪');w('ㄆㄨ2','葡');w('ㄆㄨ3','普樸譜');w('ㄆㄨ4','瀑');
-w('ㄇㄚ1','媽嗎');w('ㄇㄚ2','麻馬嗎');w('ㄇㄚ3','馬碼');w('ㄇㄚ4','罵');w('ㄇㄚ5','嗎麼');
-w('ㄇㄛ1','摩魔抹');w('ㄇㄛ2','磨膜抹');w('ㄇㄛ4','默漠墨末沫');
-w('ㄇㄟ1','眉梅');w('ㄇㄟ2','沒梅媒');w('ㄇㄟ3','每美');w('ㄇㄟ4','妹昧媚');
-w('ㄇㄠ1','貓毛茅矛');w('ㄇㄠ3','卯');w('ㄇㄠ4','帽貌冒茂');
-w('ㄇㄢ1','蠻');w('ㄇㄢ3','滿');w('ㄇㄢ4','慢漫曼蔓');
-w('ㄇㄣ1','悶門');w('ㄇㄣ2','門們');w('ㄇㄣ4','悶');
-w('ㄇㄤ2','芒茫忙盲');w('ㄇㄤ3','莽蟒');
-w('ㄇㄥ2','蒙朦');
-w('ㄇㄧ2','謎眯迷');w('ㄇㄧ3','米');w('ㄇㄧ4','蜜秘密覓');
-w('ㄇㄧㄢ2','棉眠');w('ㄇㄧㄢ3','免勉');w('ㄇㄧㄢ4','面麵');
-w('ㄇㄧㄠ2','苗描');w('ㄇㄧㄠ3','秒渺');w('ㄇㄧㄠ4','廟妙');
-w('ㄇㄧㄝ4','滅');w('ㄇㄧㄣ2','民');
-w('ㄇㄧㄥ2','明鳴');w('ㄇㄧㄥ4','命');
-w('ㄇㄡ2','謀');w('ㄇㄨ4','木目牧墓');
-w('ㄈㄚ1','發');w('ㄈㄚ3','法乏伐');w('ㄈㄚ4','法罰');
-w('ㄈㄢ1','翻番帆凡');w('ㄈㄢ2','凡繁');w('ㄈㄢ3','反返');w('ㄈㄢ4','飯泛範');
-w('ㄈㄤ1','方芳');w('ㄈㄤ2','坊房');w('ㄈㄤ3','仿訪');w('ㄈㄤ4','放');
-w('ㄈㄟ1','飛非');w('ㄈㄟ2','肥');w('ㄈㄟ4','費廢肺');
-w('ㄈㄣ1','分紛');w('ㄈㄣ3','粉');w('ㄈㄣ4','份奮憤');
-w('ㄈㄥ1','風楓豐蜂');w('ㄈㄥ4','奉縫鳳鋒');
-w('ㄈㄛ2','佛');w('ㄈㄡ3','否');
-w('ㄈㄨ1','夫敷膚');w('ㄈㄨ2','浮服福符');w('ㄈㄨ3','府腐輔父');w('ㄈㄨ4','父付附富腹負副');
-w('ㄉㄚ2','達');w('ㄉㄚ3','打');w('ㄉㄚ4','大答');
-w('ㄉㄞ1','帶待代');w('ㄉㄞ3','待');w('ㄉㄞ4','戴大帶代');
-w('ㄉㄢ1','單丹耽擔');w('ㄉㄢ3','膽旦');w('ㄉㄢ4','但旦淡彈蛋');
-w('ㄉㄤ1','當');w('ㄉㄤ3','黨擋');w('ㄉㄤ4','當蕩檔');
-w('ㄉㄠ1','刀叨');w('ㄉㄠ3','島倒導道');w('ㄉㄠ4','道到盜稻');
-w('ㄉㄜ2','的得德');w('ㄉㄜ5','的');w('ㄉㄟ3','得');
-w('ㄉㄥ1','燈');w('ㄉㄥ3','等');w('ㄉㄥ4','鄧');
-w('ㄉㄧ1','低滴堤提');w('ㄉㄧ2','地堤');w('ㄉㄧ3','底抵');w('ㄉㄧ4','地帝弟第遞');
-w('ㄉㄧㄢ1','點電店');w('ㄉㄧㄢ3','典點');w('ㄉㄧㄢ4','店電殿');
-w('ㄉㄧㄠ1','雕刁凋');w('ㄉㄧㄠ4','掉釣調');
-w('ㄉㄧㄝ4','疊跌蝶');
-w('ㄉㄧㄥ1','頂丁釘');w('ㄉㄧㄥ3','頂');w('ㄉㄧㄥ4','定訂');
-w('ㄉㄨ1','都督');w('ㄉㄨ2','讀毒獨');w('ㄉㄨ3','賭堵');w('ㄉㄨ4','度渡肚');
-w('ㄉㄨㄢ1','端');w('ㄉㄨㄢ3','短');w('ㄉㄨㄢ4','段斷');
-w('ㄉㄨㄟ4','對');w('ㄉㄨㄣ1','敦蹲');w('ㄉㄨㄣ4','頓盾');
-w('ㄉㄨㄥ1','東冬');w('ㄉㄨㄥ3','董懂');w('ㄉㄨㄥ4','動棟凍');
-w('ㄊㄚ1','他她它');w('ㄊㄚ3','塔');w('ㄊㄚ4','踏塌');
-w('ㄊㄞ1','台胎苔抬');w('ㄊㄞ4','太態泰');
-w('ㄊㄢ1','貪攤');w('ㄊㄢ2','談');w('ㄊㄢ4','歎炭探');
-w('ㄊㄤ1','湯唐');w('ㄊㄤ2','糖唐堂');
-w('ㄊㄠ1','掏滔濤');w('ㄊㄠ2','陶桃');w('ㄊㄠ3','討');w('ㄊㄠ4','套');
-w('ㄊㄥ2','疼');
-w('ㄊㄧ1','踢');w('ㄊㄧ2','題提');w('ㄊㄧ3','體');w('ㄊㄧ4','替剃');
-w('ㄊㄧㄢ1','天田添');w('ㄊㄧㄢ2','田');
-w('ㄊㄧㄠ1','挑');w('ㄊㄧㄠ2','條跳調');w('ㄊㄧㄠ4','跳調挑');
-w('ㄊㄧㄝ1','貼');w('ㄊㄧㄝ3','鐵');
-w('ㄊㄧㄥ1','廳聽');w('ㄊㄧㄥ2','停亭');w('ㄊㄧㄥ3','挺');w('ㄊㄧㄥ4','聽庭');
-w('ㄊㄨ1','土禿');w('ㄊㄨ2','圖途徒');w('ㄊㄨ3','吐兔');w('ㄊㄨ4','兔');
-w('ㄊㄨㄢ2','團');w('ㄊㄨㄟ1','推');w('ㄊㄨㄟ4','退');
-w('ㄊㄨㄣ1','吞');w('ㄊㄨㄥ1','通');w('ㄊㄨㄥ2','同桐瞳');w('ㄊㄨㄥ4','痛');
-w('ㄋㄚ2','拿那');w('ㄋㄚ3','哪');w('ㄋㄚ4','那');w('ㄋㄚ5','哪');
-w('ㄋㄞ3','奶');w('ㄋㄞ4','耐奈');
-w('ㄋㄢ2','難男南');w('ㄋㄢ4','難');w('ㄋㄤ2','囊');w('ㄋㄥ2','能');
-w('ㄋㄟ3','哪');w('ㄋㄠ3','腦惱');w('ㄋㄠ4','鬧');
-w('ㄋㄧ3','你妳');
-w('ㄋㄧㄢ2','年念');w('ㄋㄧㄢ4','念');
-w('ㄋㄧㄠ3','鳥');w('ㄋㄧㄣ2','您');w('ㄋㄧㄥ2','凝寧');
-w('ㄋㄨ3','努');w('ㄋㄨ4','怒');w('ㄋㄨㄢ3','暖');w('ㄋㄩ3','女');
-w('ㄌㄚ1','拉啦');w('ㄌㄚ4','辣蠟');w('ㄌㄞ2','來');
-w('ㄌㄢ2','藍蘭');w('ㄌㄢ3','懶覽');w('ㄌㄢ4','爛');
-w('ㄌㄤ2','郎廊狼');w('ㄌㄠ2','勞老');w('ㄌㄠ3','老');
-w('ㄌㄜ4','了勒');w('ㄌㄜ5','了');w('ㄌㄥ3','冷');
-w('ㄌㄧ2','離力');w('ㄌㄧ3','里理李');w('ㄌㄧ4','力立利例麗');
-w('ㄌㄧㄢ2','聯廉');w('ㄌㄧㄢ3','臉');w('ㄌㄧㄢ4','戀練煉');
-w('ㄌㄧㄠ2','聊療');w('ㄌㄧㄠ3','了料');w('ㄌㄧㄠ4','料');
-w('ㄌㄧㄝ4','列烈裂');
-w('ㄌㄧㄣ2','林臨');w('ㄌㄧㄣ4','吝');
-w('ㄌㄧㄥ2','零鈴靈領');w('ㄌㄧㄥ3','領令');w('ㄌㄧㄥ4','另令');
-w('ㄌㄡ2','樓');w('ㄌㄡ4','漏陋');
-w('ㄌㄨ2','路盧爐');w('ㄌㄨ4','路錄陸鹿');
-w('ㄌㄨㄢ2','亂');w('ㄌㄨㄣ2','論輪');w('ㄌㄨㄣ4','論');
-w('ㄌㄨㄥ2','龍隆');w('ㄌㄩ4','律旅');
-w('ㄍㄜ1','歌哥割');w('ㄍㄜ2','格葛閣');w('ㄍㄜ4','個各');
-w('ㄍㄟ3','給');w('ㄍㄠ1','高告');w('ㄍㄠ3','稿搞');w('ㄍㄠ4','告');
-w('ㄍㄢ1','乾甘肝');w('ㄍㄢ3','感趕敢');w('ㄍㄢ4','幹');
-w('ㄍㄤ1','鋼剛缸');w('ㄍㄤ4','剛');
-w('ㄍㄨ1','孤姑估');w('ㄍㄨ3','古鼓股');w('ㄍㄨ4','固故顧雇');
-w('ㄍㄨㄚ1','瓜刮');w('ㄍㄨㄚ4','掛');
-w('ㄍㄨㄞ1','乖');w('ㄍㄨㄞ4','怪');
-w('ㄍㄨㄢ1','關官冠觀');w('ㄍㄨㄢ3','管館');w('ㄍㄨㄢ4','慣貫');
-w('ㄍㄨㄤ1','光廣');w('ㄍㄨㄤ3','廣');
-w('ㄍㄨㄟ1','規龜歸');w('ㄍㄨㄟ4','貴跪');
-w('ㄍㄨㄣ3','滾棍');
-w('ㄍㄨㄥ1','工公功弓宮');w('ㄍㄨㄥ4','共貢供');
-w('ㄎㄜ1','科棵');w('ㄎㄜ3','可');w('ㄎㄜ4','刻課客');
-w('ㄎㄞ1','開');w('ㄎㄢ1','看砍');w('ㄎㄢ3','砍坎');w('ㄎㄢ4','看');
-w('ㄎㄤ1','康');w('ㄎㄤ4','抗');w('ㄎㄠ3','考');w('ㄎㄠ4','靠');
-w('ㄎㄡ3','口');w('ㄎㄡ4','扣');w('ㄎㄨ1','哭窟');w('ㄎㄨ3','苦');w('ㄎㄨ4','酷庫');
-w('ㄎㄨㄚ1','誇');w('ㄎㄨㄚ4','跨');w('ㄎㄨㄞ4','快筷塊');
-w('ㄎㄨㄢ1','寬');w('ㄎㄨㄣ3','困');w('ㄎㄨㄣ4','困');
-w('ㄎㄨㄥ1','空');w('ㄎㄨㄥ3','孔恐');w('ㄎㄨㄥ4','空控');
-w('ㄏㄚ1','哈');
-w('ㄏㄞ2','還孩海');w('ㄏㄞ3','海');w('ㄏㄞ4','害');
-w('ㄏㄢ2','寒含漢');w('ㄏㄢ4','漢');
-w('ㄏㄤ2','行航');w('ㄏㄠ3','好');w('ㄏㄠ4','好號');
-w('ㄏㄜ2','和河荷何合核');w('ㄏㄜ4','和賀');
-w('ㄏㄟ1','黑嘿');w('ㄏㄣ3','很狠');w('ㄏㄣ4','恨');w('ㄏㄥ2','衡橫');
-w('ㄏㄨ1','呼忽');w('ㄏㄨ2','湖壺胡蝴');w('ㄏㄨ3','虎互戶');w('ㄏㄨ4','護戶互');
-w('ㄏㄨㄚ2','華滑話花');w('ㄏㄨㄚ4','化畫話');
-w('ㄏㄨㄞ2','壞懷');w('ㄏㄨㄞ4','壞');
-w('ㄏㄨㄢ2','還歡環');w('ㄏㄨㄢ3','緩');w('ㄏㄨㄢ4','換幻');
-w('ㄏㄨㄤ2','黃皇');w('ㄏㄨㄤ3','謊');
-w('ㄏㄨㄟ2','回會');w('ㄏㄨㄟ4','會慧');
-w('ㄏㄨㄣ2','魂');w('ㄏㄨㄣ4','婚混');
-w('ㄏㄨㄥ2','紅洪弘');
-w('ㄐㄧ1','機積擊雞基');w('ㄐㄧ2','及集極急');w('ㄐㄧ3','己幾擠');w('ㄐㄧ4','記計季寄繼際');
-w('ㄐㄧㄚ1','家加佳');w('ㄐㄧㄚ3','假甲');w('ㄐㄧㄚ4','假架駕嫁價');
-w('ㄐㄧㄢ1','間尖堅');w('ㄐㄧㄢ3','簡撿');w('ㄐㄧㄢ4','見建健間');
-w('ㄐㄧㄤ1','江將');w('ㄐㄧㄤ3','獎');w('ㄐㄧㄤ4','醬');
-w('ㄐㄧㄠ1','交教焦');w('ㄐㄧㄠ3','叫腳');w('ㄐㄧㄠ4','叫教');
-w('ㄐㄧㄝ1','街揭接');w('ㄐㄧㄝ2','節傑');w('ㄐㄧㄝ3','解姐');w('ㄐㄧㄝ4','界借介');
-w('ㄐㄧㄣ1','今金斤巾');w('ㄐㄧㄣ3','緊謹');w('ㄐㄧㄣ4','近進');
-w('ㄐㄧㄥ1','京精驚');w('ㄐㄧㄥ3','境井靜景警');w('ㄐㄧㄥ4','靜鏡淨敬竟');
-w('ㄐㄧㄡ3','舊酒九久');w('ㄐㄧㄡ4','就舊救');
-w('ㄐㄩ1','居');w('ㄐㄩ3','舉');w('ㄐㄩ4','句鋸聚具劇');
-w('ㄐㄩㄢ1','卷捲');w('ㄐㄩㄢ4','卷倦');
-w('ㄐㄩㄝ2','決絕覺角');w('ㄐㄩㄝ4','決絕覺');
-w('ㄐㄩㄣ1','軍均君');
-w('ㄑㄧ1','七期騎妻');w('ㄑㄧ2','奇期');w('ㄑㄧ3','起企');w('ㄑㄧ4','氣器棄');
-w('ㄑㄧㄢ1','千牽前錢');w('ㄑㄧㄢ2','前錢');w('ㄑㄧㄢ4','欠歉');
-w('ㄑㄧㄤ1','搶強');w('ㄑㄧㄤ2','牆強');w('ㄑㄧㄤ3','搶');
-w('ㄑㄧㄠ1','敲翹');w('ㄑㄧㄠ2','橋喬');w('ㄑㄧㄠ3','俏瞧');
-w('ㄑㄧㄝ1','切');w('ㄑㄧㄝ4','切');
-w('ㄑㄧㄣ1','親');w('ㄑㄧㄥ1','清輕青情');w('ㄑㄧㄥ2','情');w('ㄑㄧㄥ3','請');w('ㄑㄧㄥ4','慶');
-w('ㄑㄧㄡ1','秋丘');
-w('ㄑㄩ1','區曲');w('ㄑㄩ3','取');w('ㄑㄩ4','去趣');
-w('ㄑㄩㄢ1','圈全');w('ㄑㄩㄢ2','全');w('ㄑㄩㄢ4','勸');
-w('ㄑㄩㄝ2','卻缺');w('ㄑㄩㄝ4','確卻');w('ㄑㄩㄣ2','群');
-w('ㄒㄧ1','西希昔稀息吸');w('ㄒㄧ2','習席');w('ㄒㄧ3','洗喜');w('ㄒㄧ4','細系戲');
-w('ㄒㄧㄚ1','蝦嚇');w('ㄒㄧㄚ4','下夏嚇');
-w('ㄒㄧㄢ1','先仙纖鮮');w('ㄒㄧㄢ2','閒賢');w('ㄒㄧㄢ3','顯險現');w('ㄒㄧㄢ4','現線限');
-w('ㄒㄧㄤ1','香相想鄉');w('ㄒㄧㄤ2','像詳');w('ㄒㄧㄤ3','想享響');w('ㄒㄧㄤ4','向項像');
-w('ㄒㄧㄠ1','消小笑宵');w('ㄒㄧㄠ3','小曉');w('ㄒㄧㄠ4','笑效孝');
-w('ㄒㄧㄝ1','些寫歇鞋');w('ㄒㄧㄝ2','邪謝斜');w('ㄒㄧㄝ3','寫');w('ㄒㄧㄝ4','謝卸');
-w('ㄒㄧㄣ1','心新信');w('ㄒㄧㄣ4','信');
-w('ㄒㄧㄥ1','星行形興');w('ㄒㄧㄥ2','行形');w('ㄒㄧㄥ4','性興幸');
-w('ㄒㄧㄡ1','修羞');
-w('ㄒㄩ1','需虛');w('ㄒㄩ3','許');w('ㄒㄩ4','續絮序');
-w('ㄒㄩㄢ1','宣選');w('ㄒㄩㄢ2','旋');w('ㄒㄩㄢ3','選');
-w('ㄒㄩㄝ2','學');w('ㄒㄩㄝ3','雪');w('ㄒㄩㄣ2','尋巡');w('ㄒㄩㄣ4','訓');
-w('ㄓㄜ2','者折');w('ㄓㄜ4','這');w('ㄓㄜ5','著');
-w('ㄓㄞ1','摘齋');w('ㄓㄞ4','債');
-w('ㄓㄢ1','沾占站');w('ㄓㄢ4','站戰佔');
-w('ㄓㄤ1','章張長');w('ㄓㄤ3','長掌');w('ㄓㄤ4','脹漲帳');
-w('ㄓㄠ1','找招昭照');w('ㄓㄠ3','找');w('ㄓㄠ4','照罩');
-w('ㄓㄣ1','針真珍');w('ㄓㄣ3','枕');w('ㄓㄣ4','陣');
-w('ㄓㄥ1','蒸爭整正');w('ㄓㄥ3','整正拯');w('ㄓㄥ4','正政症');
-w('ㄓㄧ1','知之支枝');w('ㄓㄧ3','只止指紙');w('ㄓㄧ4','至智治制');
-w('ㄓㄨ1','珠豬朱');w('ㄓㄨ2','竹');w('ㄓㄨ3','主煮');w('ㄓㄨ4','住助注著');
-w('ㄓㄨㄚ1','抓爪');w('ㄓㄨㄢ1','專');w('ㄓㄨㄢ3','轉');w('ㄓㄨㄢ4','傳賺');
-w('ㄓㄨㄤ1','裝莊');w('ㄓㄨㄤ4','撞狀');
-w('ㄓㄨㄟ1','追');w('ㄓㄨㄟ4','墜');w('ㄓㄨㄣ3','準');
-w('ㄓㄨㄥ1','中鐘忠終');w('ㄓㄨㄥ4','種重眾');
-w('ㄔㄜ1','車');w('ㄔㄞ1','拆猜');w('ㄔㄢ3','產');
-w('ㄔㄤ1','場');w('ㄔㄤ2','長場常');w('ㄔㄤ3','廠');w('ㄔㄤ4','唱');
-w('ㄔㄠ1','超抄');w('ㄔㄠ3','炒');
-w('ㄔㄣ1','沉稱');w('ㄔㄣ2','陳臣沉');w('ㄔㄣ4','趁');
-w('ㄔㄥ1','稱成城承');w('ㄔㄥ2','成城乘誠');w('ㄔㄥ3','程');w('ㄔㄥ4','秤稱');
-w('ㄔㄧ1','吃');
-w('ㄔㄨ1','出初');w('ㄔㄨ3','處');w('ㄔㄨ4','處');
-w('ㄔㄨㄢ1','川穿傳');w('ㄔㄨㄢ2','傳船');w('ㄔㄨㄢ3','喘');
-w('ㄔㄨㄤ1','窗');w('ㄔㄨㄤ4','創闖');w('ㄔㄨㄟ1','吹');w('ㄔㄨㄣ1','春');
-w('ㄔㄨㄥ1','充沖衝崇');w('ㄔㄨㄥ2','蟲重');w('ㄔㄨㄥ4','重衝');
-w('ㄕㄜ2','蛇舌');w('ㄕㄜ4','射設社');
-w('ㄕㄢ1','山閃衫');w('ㄕㄢ4','善扇');
-w('ㄕㄤ1','傷商');w('ㄕㄤ4','上');
-w('ㄕㄠ1','燒梢');w('ㄕㄠ3','少');w('ㄕㄠ4','少紹哨');
-w('ㄕㄣ1','身申深');w('ㄕㄣ2','神什');w('ㄕㄣ3','審');w('ㄕㄣ4','慎腎');
-w('ㄕㄥ1','升生聲');w('ㄕㄥ4','剩勝聖');
-w('ㄕㄧ1','詩師獅失屍');w('ㄕㄧ2','時石是實十');w('ㄕㄧ3','史使始士試');w('ㄕㄧ4','是事示士式視世');
-w('ㄕㄨ1','書輸疏');w('ㄕㄨ2','熟塾');w('ㄕㄨ3','屬數樹');w('ㄕㄨ4','樹數術束');
-w('ㄕㄨㄞ1','摔衰');w('ㄕㄨㄞ4','率帥');w('ㄕㄨㄢ1','拴栓');w('ㄕㄨㄤ1','雙');
-w('ㄕㄨㄟ3','水');w('ㄕㄨㄟ4','睡稅');w('ㄕㄨㄣ4','順');
-w('ㄖㄜ4','熱');w('ㄖㄣ2','人任');w('ㄖㄣ4','任認刃');w('ㄖㄥ2','仍');w('ㄖㄧ4','日');
-w('ㄖㄨ2','如入');w('ㄖㄨ4','入');w('ㄖㄨㄢ3','軟');w('ㄖㄨㄣ4','潤');w('ㄖㄨㄥ2','融容');
-w('ㄗㄜ2','則擇');w('ㄗㄞ1','災栽');w('ㄗㄞ4','在再載');
-w('ㄗㄢ1','咱');w('ㄗㄢ4','暫贊');
-w('ㄗㄤ1','髒臟');w('ㄗㄤ4','臟');
-w('ㄗㄠ1','糟遭');w('ㄗㄠ3','早棗');w('ㄗㄠ4','做造');w('ㄗㄣ3','怎');
-w('ㄗㄥ1','增曾');
-w('ㄗㄧ1','資滋自');w('ㄗㄧ3','字紫子自');w('ㄗㄧ4','字自');
-w('ㄗㄨ1','租組足');w('ㄗㄨ2','族足');w('ㄗㄨ3','祖組');w('ㄗㄨ4','做族');
-w('ㄗㄨㄟ4','最罪嘴醉');w('ㄗㄨㄣ1','遵尊');
-w('ㄗㄨㄥ1','總宗縱');w('ㄗㄨㄥ3','總');
-w('ㄘㄞ1','猜');w('ㄘㄞ2','才材財');w('ㄘㄞ4','菜');
-w('ㄘㄢ1','參餐');w('ㄘㄢ2','蠶');w('ㄘㄤ1','倉蒼');w('ㄘㄠ3','草');w('ㄘㄠ4','操');
-w('ㄘㄜ4','測策側');w('ㄘㄥ2','曾層');
-w('ㄘㄧ2','詞辭');w('ㄘㄧ4','刺此次');
-w('ㄘㄨ1','粗');w('ㄘㄨ4','促');w('ㄘㄨㄣ1','村');w('ㄘㄨㄣ2','存');w('ㄘㄨㄥ2','從叢');
-w('ㄙㄜ4','色');w('ㄙㄢ1','三散');w('ㄙㄢ4','散');
-w('ㄙㄤ1','喪桑');w('ㄙㄤ4','喪');w('ㄙㄠ3','掃');w('ㄙㄣ1','森');w('ㄙㄥ1','僧');
-w('ㄙㄧ1','思絲撕');w('ㄙㄧ3','死');w('ㄙㄧ4','四似');
-w('ㄙㄨ1','蘇');w('ㄙㄨ4','速素訴宿塑');
-w('ㄙㄨㄟ1','雖');w('ㄙㄨㄟ4','歲碎');w('ㄙㄨㄣ1','孫');w('ㄙㄨㄣ3','損');
-w('ㄙㄨㄥ1','松送');w('ㄙㄨㄥ4','送頌');
-// 獨立韻母
-w('ㄧ1','一衣');w('ㄧ3','以已');w('ㄧ4','意義易議亦');
-w('ㄨ3','五午舞武');w('ㄨ4','物務誤霧');
-w('ㄩ2','魚于於餘');w('ㄩ3','雨語玉與');w('ㄩ4','遇育');
-w('ㄧㄝ1','耶爺');w('ㄧㄝ3','也野');w('ㄧㄝ4','夜業葉頁');
-w('ㄧㄡ2','由油遊');w('ㄧㄡ3','有友又');w('ㄧㄡ4','又右有');
-w('ㄧㄢ1','煙淹');w('ㄧㄢ2','言鹽顏研');w('ㄧㄢ3','眼演');w('ㄧㄢ4','演驗艷');
-w('ㄧㄤ1','央秧');w('ㄧㄤ2','羊陽洋');w('ㄧㄤ3','養癢');w('ㄧㄤ4','樣');
-w('ㄧㄣ1','音因陰');w('ㄧㄣ3','引飲');w('ㄧㄣ4','印');
-w('ㄧㄥ1','英應鷹嬰');w('ㄧㄥ2','迎營贏');w('ㄧㄥ4','應映硬');
-w('ㄨㄢ1','彎灣');w('ㄨㄢ2','完玩晚');w('ㄨㄢ3','晚碗');w('ㄨㄢ4','萬');
-w('ㄨㄟ1','威危微');w('ㄨㄟ2','為圍維');w('ㄨㄟ3','偉尾委');w('ㄨㄟ4','位為');
-w('ㄨㄣ2','文問聞');w('ㄨㄣ4','問');
-w('ㄨㄤ2','王忘旺');w('ㄨㄤ3','往');w('ㄨㄤ4','旺望');
-w('ㄩㄝ4','月越');w('ㄩㄣ2','雲');w('ㄩㄣ4','運韻');
-w('ㄩㄥ3','永勇泳');w('ㄩㄥ4','用');
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+// mode: 'auto' | 'zh' | 'en'
+let mode = 'auto';
+// In auto mode, track what we're currently doing
+let autoState = 'zh'; // 'zh' | 'en'
 
-// ═══════════════════════════════════════════════
-// State
-// ═══════════════════════════════════════════════
-let mode = 'zh';
-let composing = [];
+let comp = [];       // bopomofo chars
 let tone = '1';
-let candidates = [];
+let enBuf = '';      // english buffer in auto mode
+let cands = [];
 let selIdx = 0;
 let page = 0;
-const PAGE = 9;
+const PG = 9;
+const TM = {'1':'','2':'ˊ','3':'ˇ','4':'ˋ','5':'˙'};
 
-const TONE_MARKS = {'1':'','2':'ˊ','3':'ˇ','4':'ˋ','5':'˙'};
+const out    = document.getElementById('output');
+const cBar   = document.getElementById('compBar');
+const cBopo  = document.getElementById('compBopo');
+const cTone  = document.getElementById('compTone');
+const cEn    = document.getElementById('compEn');
+const cPanel = document.getElementById('candPanel');
+const cLabel = document.getElementById('candLabel');
+const cPg    = document.getElementById('candPg');
+const cList  = document.getElementById('candList');
+const pill   = document.getElementById('modePill');
+const pilTxt = document.getElementById('modeTxt');
+const hint   = document.getElementById('topHint');
 
-const output    = document.getElementById('output');
-const compBar   = document.getElementById('composingBar');
-const compBopo  = document.getElementById('composingBopo');
-const compTone  = document.getElementById('composingTone');
-const candPanel = document.getElementById('candidatePanel');
-const candBopo  = document.getElementById('candBopo');
-const candPageEl= document.getElementById('candPage');
-const candList  = document.getElementById('candidateList');
-const modeBadge = document.getElementById('modeBadge');
-const modeText  = document.getElementById('modeText');
-const statusText= document.getElementById('statusText');
-
-// ═══════════════════════════════════════════════
-// Lookup
-// ═══════════════════════════════════════════════
-function lookup() {
-  const base = composing.join('');
-  const byTone = D[base + tone] || [];
-  const all = [];
-  // Put current-tone chars first
-  byTone.forEach(c => { if (!all.includes(c)) all.push(c); });
-  // Then fill from all tones
-  for (const t of ['1','2','3','4','5']) {
-    const k = base + t;
-    if (D[k]) D[k].forEach(c => { if (!all.includes(c)) all.push(c); });
+// ══════════════════════════════════════════════════════════════
+// LOOKUP
+// ══════════════════════════════════════════════════════════════
+function lookup(bopo, t) {
+  const base = bopo.join('');
+  const byTone = D[base+t] ? [...D[base+t]] : [];
+  const all = [...byTone];
+  for (const tt of ['1','2','3','4','5']) {
+    if (tt===t) continue;
+    const k = base+tt;
+    if (D[k]) D[k].forEach(c=>{ if(!all.includes(c)) all.push(c); });
   }
   return all;
 }
 
-// ═══════════════════════════════════════════════
-// UI update
-// ═══════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════════════════════════
 function updateUI() {
-  const has = composing.length > 0;
-  compBar.classList.toggle('active', has);
-  if (!has) { hideCandidates(); return; }
+  const isZh = comp.length > 0;
+  const isEn = !isZh && enBuf.length > 0;
 
-  compBopo.textContent = composing.join('');
-  compTone.textContent = TONE_MARKS[tone];
-  candBopo.textContent = composing.join('') + TONE_MARKS[tone];
-
-  candidates = lookup();
-  // Keep selIdx on same page but clamp
-  selIdx = Math.min(selIdx, Math.max(candidates.length - 1, 0));
-  page = Math.floor(selIdx / PAGE);
-  renderList();
+  cBar.classList.toggle('on', isZh || isEn);
+  if (isZh) {
+    cBopo.textContent = comp.join('');
+    cTone.textContent = TM[tone];
+    cEn.textContent = '';
+    cLabel.textContent = comp.join('') + TM[tone];
+    cands = lookup(comp, tone);
+    selIdx = Math.min(selIdx, Math.max(cands.length-1, 0));
+    page = Math.floor(selIdx/PG);
+    renderCands();
+  } else if (isEn) {
+    cBopo.textContent = '';
+    cTone.textContent = '';
+    cEn.textContent = enBuf;
+    hidePanel();
+  } else {
+    cBopo.textContent = '';
+    cTone.textContent = '';
+    cEn.textContent = '';
+    hidePanel();
+  }
 }
 
-function renderList() {
-  if (candidates.length === 0) {
-    candList.innerHTML = '<li style="color:#666;font-size:.85rem;padding:8px 14px">找不到候選字</li>';
-    candPageEl.textContent = '';
-  } else {
-    const s = page * PAGE;
-    const total = Math.ceil(candidates.length / PAGE);
-    candPageEl.textContent = `${page+1}/${total}`;
-    candList.innerHTML = candidates.slice(s, s + PAGE).map((ch, i) => {
-      const gi = s + i;
-      return `<li class="${gi===selIdx?'selected':''}" data-gi="${gi}">
-        <span class="idx">${i+1}</span>${ch}</li>`;
-    }).join('');
-    const el = candList.querySelector('.selected');
-    if (el) el.scrollIntoView({ block: 'nearest' });
+function renderCands() {
+  if (cands.length===0) {
+    cList.innerHTML='<li style="color:#666;font-size:.82rem;padding:7px 13px">找不到候選字</li>';
+    cPg.textContent='';
+    showPanel(); return;
   }
+  const s=page*PG, total=Math.ceil(cands.length/PG);
+  cPg.textContent=`${page+1}/${total}`;
+  cList.innerHTML=cands.slice(s,s+PG).map((ch,i)=>{
+    const gi=s+i;
+    return `<li class="${gi===selIdx?'sel':''}" data-gi="${gi}">
+      <span class="idx">${i+1}</span>${ch}</li>`;
+  }).join('');
+  const el=cList.querySelector('.sel');
+  if(el) el.scrollIntoView({block:'nearest'});
   showPanel();
 }
 
-function showPanel() { candPanel.classList.add('visible'); posPanel(); }
-function hideCandidates() { candPanel.classList.remove('visible'); }
+function showPanel(){cPanel.classList.add('on');posPanel();}
+function hidePanel(){cPanel.classList.remove('on');}
 
-function posPanel() {
-  const r = output.getBoundingClientRect();
-  const ph = candPanel.offsetHeight || 160;
-  let top = r.top - ph - 8;
-  if (top < 10) top = r.bottom + 8;
-  candPanel.style.left = r.left + 'px';
-  candPanel.style.top = top + 'px';
+function posPanel(){
+  const r=out.getBoundingClientRect();
+  const ph=cPanel.offsetHeight||180;
+  let top=r.top-ph-6; if(top<8) top=r.bottom+6;
+  cPanel.style.left=r.left+'px';
+  cPanel.style.top=top+'px';
 }
 
-// ═══════════════════════════════════════════════
-// Insert / Commit
-// ═══════════════════════════════════════════════
-function insertAt(text) {
-  const s = output.selectionStart, e = output.selectionEnd;
-  output.value = output.value.slice(0, s) + text + output.value.slice(e);
-  output.selectionStart = output.selectionEnd = s + text.length;
+// ══════════════════════════════════════════════════════════════
+// INSERT / COMMIT
+// ══════════════════════════════════════════════════════════════
+function ins(txt){
+  const s=out.selectionStart, e=out.selectionEnd;
+  out.value=out.value.slice(0,s)+txt+out.value.slice(e);
+  out.selectionStart=out.selectionEnd=s+txt.length;
 }
 
-function commitChar(ch) { insertAt(ch); reset(); }
+function commitCh(ch){ ins(ch); reset(); }
 
-function commitFirst() {
-  if (candidates.length > 0) commitChar(candidates[selIdx] ?? candidates[0]);
-  else { insertAt(composing.join('')); reset(); }
+function commitFirst(){
+  if(cands.length>0) commitCh(cands[selIdx]??cands[0]);
+  else { ins(comp.join('')); reset(); }
 }
 
-function reset() {
-  composing = []; tone = '1'; candidates = []; selIdx = 0; page = 0;
+function commitEn(){
+  if(enBuf){ ins(enBuf); }
+  enBuf='';
   updateUI();
 }
 
-// ═══════════════════════════════════════════════
-// Mode
-// ═══════════════════════════════════════════════
-function setMode(m) {
-  mode = m;
-  modeBadge.className = 'mode-badge ' + m;
-  modeText.textContent = m === 'zh' ? '中文' : 'English';
-  statusText.textContent = m === 'zh' ? 'Shift 切換為英文模式' : 'Shift 切換為中文模式';
-  if (m === 'en' && composing.length > 0) commitFirst();
+function reset(){
+  comp=[]; tone='1'; cands=[]; selIdx=0; page=0; enBuf='';
+  updateUI();
 }
-function toggleMode() { setMode(mode === 'zh' ? 'en' : 'zh'); }
 
-// ═══════════════════════════════════════════════
-// Key handler
-// ═══════════════════════════════════════════════
-output.addEventListener('keydown', e => {
-  const key = e.key;
-  if (e.ctrlKey || e.metaKey) return; // allow ctrl shortcuts
-
-  // Shift toggles mode (only when NOT composing)
-  if (key === 'Shift') {
-    if (composing.length === 0) { e.preventDefault(); toggleMode(); }
-    return;
+// ══════════════════════════════════════════════════════════════
+// MODE
+// ══════════════════════════════════════════════════════════════
+function cycleMode(){
+  const modes=['auto','zh','en'];
+  mode=modes[(modes.indexOf(mode)+1)%3];
+  applyMode();
+}
+function applyMode(){
+  if(mode==='auto'){
+    pill.className='mode-pill auto';
+    pilTxt.textContent='自動';
+    hint.textContent='打注音鍵→中文，打英文字母→英文，自動判斷';
+  } else if(mode==='zh'){
+    pill.className='mode-pill zh';
+    pilTxt.textContent='中文';
+    hint.textContent='強制中文注音模式';
+    if(enBuf){commitEn();}
+  } else {
+    pill.className='mode-pill en';
+    pilTxt.textContent='English';
+    hint.textContent='強制英文模式 — Shift 或點擊模式切換';
+    if(comp.length>0) commitFirst();
   }
+}
 
-  // English mode: let everything pass through
-  if (mode === 'en') return;
+function isZhMode(){ return mode==='zh' || (mode==='auto' && autoState==='zh'); }
+function isEnMode(){ return mode==='en' || (mode==='auto' && autoState==='en'); }
 
-  // ── Escape
-  if (key === 'Escape') {
-    if (composing.length > 0) { e.preventDefault(); reset(); }
-    return;
-  }
+// ══════════════════════════════════════════════════════════════
+// AUTO-DETECT LOGIC
+// ══════════════════════════════════════════════════════════════
+// English keys in the big‑5 bopomofo set that can ALSO be roman letters:
+// a b c d e f g h i j k l m n o p q r s t u v w x y z
+// In auto mode:
+//  - If a key is in KM → treat as bopomofo
+//  - If in auto-en mode (already typing english) and key is alpha → continue english
+//  - Digit keys that are bopomofo (1,2,5,8,9,0) → zh
+//  - Digit keys that are tones (3,4,6,7) depend on context
+//  - Keys NOT in KM and alpha → english
+// The rule: once we start composing zh (comp.length>0), stay zh until committed.
+// Once we start en buffer (comp empty, enBuf non-empty), stay en until committed.
+// When both empty and auto, the FIRST key decides.
 
-  // ── Backspace
-  if (key === 'Backspace') {
-    if (composing.length > 0) {
-      e.preventDefault();
-      composing.pop(); tone = '1'; selIdx = 0; page = 0;
-      if (composing.length === 0) reset(); else updateUI();
+function detectAutoState(key){
+  if(comp.length>0) return 'zh';
+  if(enBuf.length>0) return 'en';
+  // Decide from key
+  const kl=key.toLowerCase();
+  if(KM[kl]!==undefined) return 'zh';  // definite bopo key
+  if(TK[key]!==undefined) return 'zh'; // tone key → zh context
+  if(/^[a-z]$/i.test(key)) return 'en'; // pure alpha not in KM → en
+  return 'zh';
+}
+
+// ══════════════════════════════════════════════════════════════
+// KEY HANDLER
+// ══════════════════════════════════════════════════════════════
+out.addEventListener('keydown', e => {
+  const key=e.key;
+  const ctrl=e.ctrlKey||e.metaKey;
+  if(ctrl) return;
+
+  // Shift = force english (commit zh first)
+  if(key==='Shift'){
+    if(comp.length>0){e.preventDefault();commitFirst();}
+    else if(enBuf){e.preventDefault();commitEn();}
+    if(mode==='auto'){
+      autoState='en';
+      pill.className='mode-pill en';pilTxt.textContent='英↑';
     }
     return;
   }
 
-  // ── Enter / Space = commit first
-  if (key === 'Enter' || key === ' ') {
-    if (composing.length > 0) { e.preventDefault(); commitFirst(); }
+  // ── Forced English mode
+  if(mode==='en'){
+    // Just let everything through; handle special keys
+    if(key==='Escape'&&enBuf){e.preventDefault();enBuf='';updateUI();}
     return;
   }
 
-  // ── Arrow Up / Down = move selection
-  if (key === 'ArrowUp' || key === 'ArrowDown') {
-    if (composing.length > 0) {
+  // ── Auto mode: determine state
+  if(mode==='auto') autoState=detectAutoState(key);
+
+  // ── English buffer (auto-en state)
+  if(mode==='auto' && autoState==='en'){
+    if(key==='Backspace'){
+      if(enBuf.length>0){e.preventDefault();enBuf=enBuf.slice(0,-1);updateUI();}
+      return;
+    }
+    if(key==='Escape'){if(enBuf){e.preventDefault();enBuf='';updateUI();}return;}
+    if(key==='Enter'||key===' '){
+      if(enBuf){e.preventDefault();commitEn();}
+      return;
+    }
+    if(/^[a-zA-Z0-9`\-=\[\]\\;',./]$/.test(key)&&key.length===1){
       e.preventDefault();
-      selIdx += key === 'ArrowDown' ? 1 : -1;
-      selIdx = Math.max(0, Math.min(selIdx, candidates.length - 1));
-      page = Math.floor(selIdx / PAGE);
-      renderList();
+      enBuf+=key;
+      // Auto-commit on space would be after this block, handled above
+      updateUI();
+      return;
+    }
+    // Non-printable → commit en buffer
+    if(enBuf){commitEn();}
+    return;
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ── Chinese (zh) mode from here
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  if(key==='Escape'){if(comp.length>0){e.preventDefault();reset();}return;}
+
+  if(key==='Backspace'){
+    if(comp.length>0){
+      e.preventDefault();comp.pop();tone='1';selIdx=0;page=0;
+      if(comp.length===0)reset();else updateUI();
     }
     return;
   }
 
-  // ── PageDown / Right = next page
-  if (key === 'PageDown' || key === 'ArrowRight') {
-    if (composing.length > 0) {
-      e.preventDefault();
-      const maxPage = Math.ceil(candidates.length / PAGE) - 1;
-      page = Math.min(page + 1, maxPage);
-      selIdx = page * PAGE;
-      renderList();
-    }
+  if(key==='Enter'){if(comp.length>0){e.preventDefault();commitFirst();}return;}
+
+  if(key===' '){
+    if(comp.length>0){e.preventDefault();tone='1';cands=lookup(comp,tone);commitCh(cands[0]??comp.join(''));}
     return;
   }
 
-  // ── PageUp / Left = prev page
-  if (key === 'PageUp' || key === 'ArrowLeft') {
-    if (composing.length > 0) {
-      e.preventDefault();
-      page = Math.max(page - 1, 0);
-      selIdx = page * PAGE;
-      renderList();
-    }
-    return;
+  // Arrow nav
+  if(key==='ArrowUp'&&comp.length>0){
+    e.preventDefault();selIdx=Math.max(selIdx-1,0);page=Math.floor(selIdx/PG);renderCands();return;
+  }
+  if(key==='ArrowDown'&&comp.length>0){
+    e.preventDefault();selIdx=Math.min(selIdx+1,cands.length-1);page=Math.floor(selIdx/PG);renderCands();return;
+  }
+  if((key==='PageDown'||key==='ArrowRight')&&comp.length>0){
+    e.preventDefault();const mp=Math.ceil(cands.length/PG)-1;
+    page=Math.min(page+1,mp);selIdx=page*PG;renderCands();return;
+  }
+  if((key==='PageUp'||key==='ArrowLeft')&&comp.length>0){
+    e.preventDefault();page=Math.max(page-1,0);selIdx=page*PG;renderCands();return;
   }
 
-  // ── Tone keys (only when composing): Space=1聲, 6=2聲, 3=3聲, 4=4聲, 8=輕聲
-  // Map input key → internal tone digit
-  const TONE_KEY_MAP = {'6':'2','3':'3','4':'4','7':'5'};
-  if (composing.length > 0 && TONE_KEY_MAP[key]) {
+  // Tone keys (only when composing)
+  if(TK[key]&&comp.length>0){
     e.preventDefault();
-    tone = TONE_KEY_MAP[key]; selIdx = 0; page = 0;
-    candidates = lookup();
-    if (candidates.length > 0) commitChar(candidates[0]);
-    else { insertAt(composing.join('') + TONE_MARKS[tone]); reset(); }
+    tone=TK[key];selIdx=0;page=0;
+    cands=lookup(comp,tone);
+    if(cands.length>0)commitCh(cands[0]);
+    else{ins(comp.join('')+TM[tone]);reset();}
     return;
   }
 
-  // ── Number 1-9 pick candidate (only keys not used as tones: 1,2,5,7,9)
-  if (/^[1-9]$/.test(key) && composing.length > 0 && !TONE_KEY_MAP[key]) {
-    const pick = page * PAGE + parseInt(key) - 1;
-    if (pick < candidates.length) {
-      e.preventDefault();
-      selIdx = pick;
-      commitChar(candidates[pick]);
-    }
+  // Number 1-9 pick candidate (exclude tone keys 3,4,6,7)
+  if(/^[1-9]$/.test(key)&&comp.length>0&&!TK[key]){
+    const pick=page*PG+parseInt(key)-1;
+    if(pick<cands.length){e.preventDefault();selIdx=pick;commitCh(cands[pick]);}
     return;
   }
 
-  // ── Bopomofo key
-  const kl = key.toLowerCase();
-  if (KEYMAP[kl] !== undefined) {
+  // Bopomofo key
+  const kl=key.toLowerCase();
+  if(KM[kl]!==undefined){
     e.preventDefault();
-    composing.push(KEYMAP[kl]);
-    tone = '1'; selIdx = 0; page = 0;
+    comp.push(KM[kl]);tone='1';selIdx=0;page=0;
     updateUI();
+    if(mode==='auto'){autoState='zh';pill.className='mode-pill zh';pilTxt.textContent='中';}
     return;
   }
 
-  // ── Non-bopomofo non-special key while composing → commit first
-  if (composing.length > 0) {
-    commitFirst();
-    // Let the key fall through to be inserted normally
+  // Not a bopo key while composing → commit first, then let key through
+  if(comp.length>0){commitFirst();}
+});
+
+// Reset shift-en state when key released
+document.addEventListener('keyup',e=>{
+  if(e.key==='Shift'&&mode==='auto'&&comp.length===0&&enBuf.length===0){
+    autoState='zh';pill.className='mode-pill auto';pilTxt.textContent='自動';
   }
 });
 
 // Candidate click
-candList.addEventListener('click', e => {
-  const li = e.target.closest('li[data-gi]');
-  if (!li) return;
-  selIdx = parseInt(li.dataset.gi);
-  commitChar(candidates[selIdx]);
+cList.addEventListener('click',e=>{
+  const li=e.target.closest('li[data-gi]');
+  if(!li)return;
+  selIdx=parseInt(li.dataset.gi);
+  commitCh(cands[selIdx]);
 });
 
-// Reposition on resize/scroll
-window.addEventListener('resize', () => { if (candPanel.classList.contains('visible')) posPanel(); });
-window.addEventListener('scroll', () => { if (candPanel.classList.contains('visible')) posPanel(); }, true);
-
-// ═══════════════════════════════════════════════
-// Keymap display
-// ═══════════════════════════════════════════════
-function initKeymap() {
-  const grid = document.getElementById('keymapGrid');
-  [['1','2','3','4','5','6','7','8','9','0','-'],
-   ['q','w','e','r','t','y','u','i','o','p'],
-   ['a','s','d','f','g','h','j','k','l',';'],
-   ['z','x','c','v','b','n','m',',','.','/' ]
-  ].flat().forEach(k => {
-    if (!KEYMAP[k]) return;
-    const d = document.createElement('div');
-    d.className = 'key-cell';
-    d.innerHTML = `<span class="kc">${k.toUpperCase()}</span><span class="kb">${KEYMAP[k]}</span>`;
-    grid.appendChild(d);
+// ══════════════════════════════════════════════════════════════
+// VIRTUAL KEYBOARD
+// ══════════════════════════════════════════════════════════════
+function buildKb(){
+  const kb=document.getElementById('keyboard');
+  KB_ROWS.forEach(row=>{
+    const div=document.createElement('div');
+    div.className='kb-row';
+    row.forEach(k=>{
+      const btn=document.createElement('div');
+      btn.className='key '+(k.cls||'');
+      let html=`<span class="fn">${k.fn}</span>`;
+      if(k.bopo) html+=`<span class="bopo">${k.bopo}</span>`;
+      if(k.sub)  html+=`<span class="sub">${k.sub}</span>`;
+      btn.innerHTML=html;
+      btn.addEventListener('mousedown',ev=>{
+        ev.preventDefault();
+        out.focus();
+        const physKey=k.key||k.fn;
+        // Simulate keydown
+        simulateKey(physKey, k.fn, k.bopo, k.sub, k.cls);
+      });
+      div.appendChild(btn);
+    });
+    kb.appendChild(div);
   });
 }
-function toggleKeymap() {
-  const g = document.getElementById('keymapGrid');
-  const t = document.getElementById('keymapToggle');
-  const o = g.classList.toggle('open');
-  t.classList.toggle('open', o);
+
+function simulateKey(physKey, fn, bopo, sub, cls){
+  // Map virtual key to handler
+  if(physKey==='Backspace'){
+    const ev=new KeyboardEvent('keydown',{key:'Backspace',bubbles:true});
+    out.dispatchEvent(ev);
+    return;
+  }
+  if(physKey==='Enter'){
+    const ev=new KeyboardEvent('keydown',{key:'Enter',bubbles:true});
+    out.dispatchEvent(ev);
+    return;
+  }
+  if(physKey==='Space'){
+    const ev=new KeyboardEvent('keydown',{key:' ',bubbles:true});
+    out.dispatchEvent(ev);
+    return;
+  }
+  if(physKey==='ShiftLeft'||physKey==='ShiftRight'){
+    const ev=new KeyboardEvent('keydown',{key:'Shift',bubbles:true});
+    out.dispatchEvent(ev);
+    return;
+  }
+  if(physKey==='Tab'||physKey==='CapsLock') return;
+
+  // Regular key
+  const raw=fn==='⌫'?'Backspace':fn;
+  const kl=raw.toLowerCase();
+  const ev=new KeyboardEvent('keydown',{key:kl,bubbles:true});
+  out.dispatchEvent(ev);
 }
 
-// ═══════════════════════════════════════════════
-// Controls
-// ═══════════════════════════════════════════════
-function copyOutput() {
-  output.select();
-  navigator.clipboard.writeText(output.value).catch(() => document.execCommand('copy'));
-  statusText.textContent = '✓ 已複製到剪貼板';
-  setTimeout(() => setMode(mode), 2000);
+function toggleKb(){
+  const kb=document.getElementById('keyboard');
+  const tg=document.getElementById('kbToggle');
+  const o=kb.classList.toggle('open');
+  tg.classList.toggle('open',o);
 }
-function clearOutput() { output.value = ''; reset(); output.focus(); }
+
+// ══════════════════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════════════════
+function copyOut(){
+  out.select();
+  navigator.clipboard.writeText(out.value).catch(()=>document.execCommand('copy'));
+  hint.textContent='✓ 已複製';setTimeout(()=>applyMode(),1800);
+}
+function clearOut(){out.value='';reset();out.focus();}
+
+window.addEventListener('resize',()=>{if(cPanel.classList.contains('on'))posPanel();});
+window.addEventListener('scroll',()=>{if(cPanel.classList.contains('on'))posPanel();},true);
 
 // Init
-initKeymap();
-setMode('zh');
-output.focus();
+buildKb();
+applyMode();
+out.focus();
 </script>
 </body>
 </html>
